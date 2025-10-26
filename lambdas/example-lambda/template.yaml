@@ -3,9 +3,10 @@ Transform: AWS::Serverless-2016-10-31
 Description: Hello World Python Lambda Function
 
 Resources:
-  HelloPythonFunction:
+  ExampleLambda:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/
       Handler: app.lambda_handler
       Timeout: 30
+      Runtime: python3.13
