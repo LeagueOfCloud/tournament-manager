@@ -112,4 +112,5 @@ jobs:
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
             --region ${{ env.AWS_REGION }} \
             --no-confirm-changeset \
+            --resolve-s3 \
             --no-fail-on-empty-changeset

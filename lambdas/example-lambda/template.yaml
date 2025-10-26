@@ -10,3 +10,6 @@ Resources:
       Handler: app.lambda_handler
       Timeout: 30
       Runtime: python3.13
+      Environment:
+        Variables: 
+          CALL_URL: "https://google.com"
