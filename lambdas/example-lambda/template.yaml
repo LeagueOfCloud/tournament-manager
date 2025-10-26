@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Hello World Python Lambda Function
+
+Resources:
+  ExampleLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Environment:
+        Variables: 
+          CALL_URL: "https://google.com"
