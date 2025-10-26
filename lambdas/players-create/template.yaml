@@ -17,4 +17,4 @@ Resources:
           DB_USER: "root"
           DB_PASSWORD: "admin"
           DB_NAME: "tournament_db"
-          BUCKET_NAME: "good_question"
+          BUCKET_NAME: "lockout-tournament-assets"
