@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS tournament_db.teams (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    logo_url VARCHAR(255),
+    banner_url VARCHAR(255),
+    tag VARCHAR(3) NOT NULL UNIQUE
+);
