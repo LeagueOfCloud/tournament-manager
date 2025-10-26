@@ -5,14 +5,14 @@ on:
     branches:
       - main
       - workflow/lambda-deployments
-    paths:
-      - 'lambdas/**'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'lambdas/**'
-  workflow_dispatch:
+  #   paths:
+  #     - 'lambdas/**'
+  # pull_request:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'lambdas/**'
+  # workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1
