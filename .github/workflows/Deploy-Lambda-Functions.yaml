@@ -16,7 +16,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  env.AWS_DEPLOY_ROLE_ARN: arn:aws:iam::327362716042:role/DeployLambdasWorkflowRole-Role-gwCAit0CoOuQ
+  AWS_DEPLOY_ROLE_ARN: arn:aws:iam::327362716042:role/DeployLambdasWorkflowRole-Role-gwCAit0CoOuQ
 
 jobs:
   discover-lambdas:
