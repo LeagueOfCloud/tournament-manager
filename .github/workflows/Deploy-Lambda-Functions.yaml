@@ -15,7 +15,7 @@ on:
   # workflow_dispatch:
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: eu-west-1
   AWS_DEPLOY_ROLE_ARN: arn:aws:iam::327362716042:role/DeployLambdasWorkflowRole-Role-gwCAit0CoOuQ
 
 jobs:
@@ -74,16 +74,6 @@ jobs:
           role-session-name: GitHubActions-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Cache SAM dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.aws-sam/cache
-            ${{ matrix.lambda-dir }}/.aws-sam
-          key: sam-${{ matrix.lambda-dir }}-${{ hashFiles(format('{0}/**/requirements.txt', matrix.lambda-dir), format('{0}/**/package.json', matrix.lambda-dir), format('{0}/**/go.mod', matrix.lambda-dir)) }}
-          restore-keys: |
-            sam-${{ matrix.lambda-dir }}-
-
       - name: Validate SAM template
         working-directory: ${{ matrix.lambda-dir }}
         run: |
@@ -109,7 +99,7 @@ jobs:
           
           sam deploy \
             --stack-name "$STACK_NAME" \
-            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
             --region ${{ env.AWS_REGION }} \
             --no-confirm-changeset \
             --resolve-s3 \
