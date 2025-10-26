@@ -1,0 +1,101 @@
+name: Deploy Lambda Functions
+
+on:
+  push:
+    branches:
+      - main
+      - workflow/lambda-deployments
+    paths:
+      - 'lambdas/**'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: eu-west-1
+  AWS_DEPLOY_ROLE_ARN: arn:aws:iam::327362716042:role/DeployLambdasWorkflowRole-Role-gwCAit0CoOuQ
+
+jobs:
+  discover-lambdas:
+    runs-on: ubuntu-latest
+    outputs:
+      lambda-dirs: ${{ steps.find-lambdas.outputs.lambda-dirs }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find Lambda directories
+        id: find-lambdas
+        run: |
+          if [ -d "lambdas" ]; then
+            # Find all directories in lambdas/ that contain either template.yaml or template.yml
+            lambda_dirs=$(find lambdas -mindepth 1 -maxdepth 1 -type d -exec test -e '{}/template.yaml' -o -e '{}/template.yml' \; -print | jq -R -s -c 'split("\n")[:-1]')
+            echo "lambda-dirs=$lambda_dirs" >> $GITHUB_OUTPUT
+            echo "Found Lambda directories: $lambda_dirs"
+          else
+            echo "lambda-dirs=[]" >> $GITHUB_OUTPUT
+            echo "No lambdas directory found"
+          fi
+
+  deploy-lambdas:
+    needs: discover-lambdas
+    if: needs.discover-lambdas.outputs.lambda-dirs != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        lambda-dir: ${{ fromJson(needs.discover-lambdas.outputs.lambda-dirs) }}
+      fail-fast: false
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: GitHubActions-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate SAM template
+        working-directory: ${{ matrix.lambda-dir }}
+        run: |
+          if [ -f template.yaml ]; then
+            sam validate --template template.yaml
+          elif [ -f template.yml ]; then
+            sam validate --template template.yml
+          else
+            echo "No SAM template found in ${{ matrix.lambda-dir }}"
+            exit 1
+          fi
+
+      - name: Build Lambda function
+        working-directory: ${{ matrix.lambda-dir }}
+        run: |
+          sam build --use-container
+
+      - name: Deploy to AWS
+        working-directory: ${{ matrix.lambda-dir }}
+        run: |
+          STACK_NAME="lambda-${{ matrix.lambda-dir }}"
+          STACK_NAME=$(echo $STACK_NAME | sed 's/lambdas\///g' | sed 's/\//-/g')
+          
+          sam deploy \
+            --stack-name "$STACK_NAME" \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+            --region ${{ env.AWS_REGION }} \
+            --no-confirm-changeset \
+            --resolve-s3 \
+            --no-fail-on-empty-changeset
