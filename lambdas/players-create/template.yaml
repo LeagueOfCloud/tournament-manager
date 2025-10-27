@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: Create player Python Lambda Function
 
 Resources:
-  ExampleLambda:
+  CreatePlayerLambda:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/
