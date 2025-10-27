@@ -2,7 +2,6 @@ import json
 import os
 import pymysql
 import requests
-from datetime import datetime
 
 INSERT_ACCOUNT_SQL = """
     INSERT INTO riot_accounts (account_name, account_puuid, player_id, is_primary)

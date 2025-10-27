@@ -2,17 +2,14 @@ import json
 import os
 import pymysql
 
-UPDATE_ACCOUNT_SQL = """
-    UPDATE riot_accounts SET is_primary = %s WHERE id = %s
+DELETE_ACCOUNT_SQL = """
+    DELETE FROM riot_accounts WHERE id = %s
 """
 
 
 def validate_account_data(account_data) -> bool:
     try:
         int(account_data.get("account_id", ""))
-        
-        if not isinstance(account_data.get("is_primary"), bool):
-            raise TypeError
     except (ValueError, TypeError):
         return False
 
@@ -43,7 +40,6 @@ def lambda_handler(event, context):
         }
 
     account_id = account_data.get("account_id")
-    is_primary = account_data.get("is_primary")
 
     connection = None
 
@@ -55,11 +51,11 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cursor:
             cursor.execute(
-                UPDATE_ACCOUNT_SQL, ("true" if is_primary else "false", account_id)
+                DELETE_ACCOUNT_SQL, (account_id)
             )
             connection.commit()
 
-        print(f"{request_id} Riot Account Updated")
+        print(f"{request_id} Riot Account Deleted")
 
         return {
             "statusCode": 200,
@@ -71,10 +67,10 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
-        print(f"{request_id} Failed to update riot account, Error: {str(e)}")
+        print(f"{request_id} Failed to delete riot account, Error: {str(e)}")
         return {
             "statusCode": 500,
-            "body": json.dumps(f"Failed to update riot account, Error: {str(e)}"),
+            "body": json.dumps(f"Failed to delete riot account, Error: {str(e)}"),
         }
 
     finally:

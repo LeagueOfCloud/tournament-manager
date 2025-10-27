@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: Lambda to create riot accounts
 
 Resources:
-  UpdateRiotAccountLambda:
+  DeleteRiotAccountLambda:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/
