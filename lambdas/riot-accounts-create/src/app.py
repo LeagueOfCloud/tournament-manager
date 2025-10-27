@@ -4,7 +4,7 @@ import pymysql
 import requests
 from datetime import datetime
 
-INSERT_PLAYER_SQL = """
+INSERT_ACCOUNT_SQL = """
     INSERT INTO riot_accounts (account_name, account_puuid, player_id, is_primary)
     VALUES (%s, %s, %s, %s)
 """
@@ -110,7 +110,7 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cursor:
             cursor.execute(
-                INSERT_PLAYER_SQL, (account_name, account_puuid, player_id, "true" if is_primary else "false")
+                INSERT_ACCOUNT_SQL, (account_name, account_puuid, player_id, "true" if is_primary else "false")
             )
             connection.commit()
             insert_id = cursor.lastrowid
