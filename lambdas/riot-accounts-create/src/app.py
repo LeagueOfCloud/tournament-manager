@@ -52,8 +52,8 @@ def validate_account_data(account_data) -> bool:
 
     try:
         int(account_data.get("player_id", ""))
-
-        if not isinstance(account_data.get("is_primary", bool)):
+        
+        if not isinstance(account_data.get("is_primary"), bool):
             raise TypeError
     except (ValueError, TypeError):
         return False
@@ -110,7 +110,7 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cursor:
             cursor.execute(
-                INSERT_PLAYER_SQL, (account_name, account_puuid, player_id, is_primary)
+                INSERT_PLAYER_SQL, (account_name, account_puuid, player_id, "true" if is_primary else "false")
             )
             connection.commit()
             insert_id = cursor.lastrowid
