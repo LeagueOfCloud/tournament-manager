@@ -110,7 +110,7 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cursor:
             cursor.execute(
-                INSERT_PLAYER_SQL, (account_name, ..., player_id, is_primary)
+                INSERT_PLAYER_SQL, (account_name, account_puuid, player_id, is_primary)
             )
             connection.commit()
             insert_id = cursor.lastrowid
