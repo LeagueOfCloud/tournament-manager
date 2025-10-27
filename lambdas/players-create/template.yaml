@@ -12,9 +12,9 @@ Resources:
       Runtime: python3.13
       Environment:
         Variables:
-          DB_HOST: "host.docker.internal"
+          DB_HOST: "3.250.106.184"
           DB_PORT: "3306"
-          DB_USER: "root"
-          DB_PASSWORD: "admin"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
           DB_NAME: "tournament_db"
           BUCKET_NAME: "lockout-tournament-assets"
