@@ -1,0 +1,2 @@
+CREATE DATABASE IF NOT EXISTS tournament_db;
+
