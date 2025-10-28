@@ -69,7 +69,7 @@ def lambda_handler(event, context):
             delete_id = cursor.lastrowid
             
         
-        print(f"{request_id} Player deleted. Deleted player id: {delete_id}")
+        print(f"{request_id} Player deleted. Deleted player id: {player_id}")
 
         return {    
             'statusCode': 200,
