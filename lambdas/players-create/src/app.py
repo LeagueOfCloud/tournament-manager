@@ -61,7 +61,7 @@ def lambda_handler(event, context):
     print(f"{request_id} Reveived player_data: {str(player_data)}")
 
     if not validate_player_data(player_data):
-        print(f"{request_id} Invalid player_data for request_id")
+        print(f"{request_id} Invalid player_data")
         return {
             'statusCode': 400,
         }
