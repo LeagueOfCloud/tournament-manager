@@ -4,9 +4,9 @@ Description: Create player Python Lambda Function
 
 Resources:
   CreatePlayerLambda:
-    Role: !GetAtt CreatePlayerLambdaRole.Arn
     Type: AWS::Serverless::Function
     Properties:
+      Role: !GetAtt CreatePlayerLambdaRole.Arn
       CodeUri: src/
       Handler: app.lambda_handler
       Timeout: 30
@@ -19,6 +19,7 @@ Resources:
           DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
           DB_NAME: "tournament_db"
           BUCKET_NAME: "lockout-tournament-assets"
+
   CreatePlayerLambdaRole:
       Type: AWS::IAM::Role
       Properties:
@@ -42,4 +43,3 @@ Resources:
                   Resource:
                     - arn:aws:s3:::lockout-tournament-assets
                     - arn:aws:s3:::lockout-tournament-assets/*
-
