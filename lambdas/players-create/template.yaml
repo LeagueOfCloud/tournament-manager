@@ -4,6 +4,7 @@ Description: Create player Python Lambda Function
 
 Resources:
   CreatePlayerLambda:
+    Role: !GetAtt CreatePlayerLambdaRole.Arn
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/
