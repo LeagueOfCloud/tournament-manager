@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Update player Python Lambda Function
+
+Resources:
+  UpdatePlayerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt UpdatePlayerLambdaRole.Arn
+      CodeUri: src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Environment:
+        Variables:
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+          BUCKET_NAME: "lockout-tournament-assets"
+
+  UpdatePlayerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3BucketAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - arn:aws:s3:::lockout-tournament-assets
+                  - arn:aws:s3:::lockout-tournament-assets/*
