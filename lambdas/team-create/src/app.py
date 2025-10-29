@@ -9,7 +9,7 @@ s3 = boto3.client("s3")
 
 INSERT_TEAMS_SQL = """
     INSERT INTO teams (name, logo_url, banner_url, tag)
-    VALUES (%s, %s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s)
 """
 
 def validate_team_data(team_data) -> bool:
