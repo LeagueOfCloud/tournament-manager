@@ -3,58 +3,15 @@ import os
 import re
 import pymysql
 
-# ---------- DB connection ----------
-def create_connection() -> pymysql.Connection:
-    return pymysql.connect(
-        host=os.environ["DB_HOST"],
-        port=int(os.environ["DB_PORT"]),
-        user=os.environ["DB_USER"],
-        password=os.environ["DB_PASSWORD"],
-        database=os.environ["DB_NAME"],
-        cursorclass=pymysql.cursors.DictCursor
-    )
-
-def _response(status: int, body) -> dict:
-    return {
-        "statusCode": status,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-        },
-        "body": json.dumps(body, default=str)
-    }
-
-# ---------- Route config (resource -> table/columns/pk) ----------
-# Only allow explicit resources for safety
 ROUTES = {
-    "players": {
-        "table": "players",
-        "columns": "id, name, avatar_url, discord_id, team_id, team_role",
-        "pk": "id",
-        "pk_is_int": True,
-    },
-    "teams": {
-        "table": "teams",
-        "columns": "id, team_name, created_at",
-        "pk": "id",
-        "pk_is_int": True,
-    },
-    "riot-accounts": {
-        "table": "riot_accounts",
-        # Avoid exposing PUUID publicly unless you must
-        "columns": "id, account_name, player_id, is_primary",
-        "pk": "id",
-        "pk_is_int": True,
-    },
-    "profiles": {
-        "table": "profiles",
-        "columns": "id, player_id, bio, created_at",
-        "pk": "id",
-        "pk_is_int": True,
-    },
+    # Route config (resource -> table/columns/pk)
+    "players": "players",
+    "teams": "teams",
+    "accounts": "riot_accounts",
+    "profiles": "profiles"
 }
 
-# ---------- Helpers ----------
+# Helper functions
 def _safe_int(value, *, allow_none=False):
     if value is None:
         return None if allow_none else 0
@@ -64,10 +21,6 @@ def _safe_int(value, *, allow_none=False):
         return None if allow_none else 0
 
 def _extract_path(event) -> str:
-    """
-    Return the raw path as seen by API Gateway.
-    Supports REST and HTTP API v2.
-    """
     # REST API
     if "path" in event and isinstance(event["path"], str):
         return event["path"]
@@ -86,12 +39,6 @@ def _split_path_segments(path: str):
     return [seg for seg in (path or "").split("/") if seg]
 
 def _resolve_route_and_id(event):
-    """
-    Determine resource key (e.g., 'teams') and id (if present).
-    Priority:
-      1) Use event.pathParameters.id if present (API Gateway mapping)
-      2) Parse from path segments: /{resource}/{id}?
-    """
     path_params = event.get("pathParameters") or {}
     id_from_params = path_params.get("id")
 
@@ -106,7 +53,26 @@ def _resolve_route_and_id(event):
     record_id = id_from_params if id_from_params is not None else id_from_path
     return resource, record_id
 
-# ---------- Main handler ----------
+def _response(status: int, body) -> dict:
+    return {
+        "statusCode": status,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
+        "body": json.dumps(body, default=str)
+    }
+
+def create_connection() -> pymysql.Connection:
+    return pymysql.connect(
+        host=os.environ["DB_HOST"],
+        port=int(os.environ["DB_PORT"]),
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        database=os.environ["DB_NAME"],
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
 def lambda_handler(event, context):
     request_id = getattr(context, "aws_request_id", "no-request-id")
 
@@ -121,11 +87,7 @@ def lambda_handler(event, context):
             print(f"{request_id} Unknown resource: {resource}")
             return _response(404, {"message": "Resource not found"})
 
-        cfg = ROUTES[resource]
-        table = cfg["table"]
-        columns = cfg["columns"]
-        pk = cfg["pk"]
-        pk_is_int = cfg["pk_is_int"]
+        table = ROUTES[resource]
 
         # Pagination for list
         limit = _safe_int(qparams.get("limit"), allow_none=True)
@@ -140,11 +102,11 @@ def lambda_handler(event, context):
             print(f"{request_id} DB connected")
 
             with conn.cursor() as cur:
-                # -------- LIST (/resource) --------
+                # LIST (/resource)
                 if record_id is None or str(record_id).strip() == "":
                     list_sql = (
-                        f"SELECT {columns} FROM {table} "
-                        f"ORDER BY {pk} DESC LIMIT %s OFFSET %s"
+                        f"SELECT * FROM {table} "
+                        f"ORDER BY id DESC LIMIT %s OFFSET %s"
                     )
                     print(f"{request_id} LIST {table} limit={limit} offset={offset}")
                     cur.execute(list_sql, (limit, offset))
@@ -162,23 +124,20 @@ def lambda_handler(event, context):
                         "offset": offset
                     })
 
-                # -------- DETAIL (/resource/{id}) --------
-                if pk_is_int:
-                    try:
-                        record_id_val = int(str(record_id).strip())
-                    except Exception:
-                        print(f"{request_id} Invalid id for {resource}: {record_id}")
-                        return _response(400, {"message": "Invalid id"})
-                else:
-                    record_id_val = str(record_id).strip()
-
-                detail_sql = f"SELECT {columns} FROM {table} WHERE {pk} = %s"
-                print(f"{request_id} DETAIL {table}.{pk}={record_id_val}")
+                # DETAIL (/resource/{id})
+                try:
+                    record_id_val = int(str(record_id).strip())
+                except Exception:
+                    print(f"{request_id} Invalid id for {resource}: {record_id}")
+                    return _response(400, {"message": "Invalid id"})
+        
+                detail_sql = f"SELECT * FROM {table} WHERE id = %s"
+                print(f"{request_id} DETAIL {table}.id={record_id_val}")
                 cur.execute(detail_sql, (record_id_val,))
                 row = cur.fetchone()
 
                 if not row:
-                    print(f"{request_id} Not found {table}.{pk}={record_id_val}")
+                    print(f"{request_id} Not found {table}.id={record_id_val}")
                     return _response(404, {"message": f"{resource} record not found"})
 
                 return _response(200, row)
