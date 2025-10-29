@@ -3,7 +3,15 @@ import os
 import traceback
 
 PATH_PERMISSIONS = {
-    "POST /players": "admin"
+    "POST /players": "admin",
+    "DELETE /players": "admin",
+    "PUT /players": "admin",
+    "POST /teams": "admin",
+    "DELETE /teams": "admin",
+    "PUT /teams": "admin",
+    "POST /riot-accounts": "admin",
+    "DELETE /riot-accounts": "admin",
+    "PUT /riot-accounts": "admin",
 }
 
 def create_connection() -> pymysql.Connection:
