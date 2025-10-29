@@ -1,0 +1,209 @@
+import base64
+import json
+import os
+import boto3
+import pymysql
+from datetime import datetime
+
+s3 = boto3.client("s3")
+
+VALID_TEAM_ROLES = ['top', 'jungle', 'mid', 'bot', 'support', 'sub']
+
+def validate_team_data(team_data) -> bool:
+    if not team_data.get("team_id"):
+        return False
+    
+    try:
+        int(team_data.get("team_id"))
+    except (ValueError, TypeError):
+        return False
+    
+    updatable_fields = ["name", "logo_url", "banner_url", "tag"]
+    if not any(field in player_data for field in updatable_fields):
+        return False
+    
+    if "team_id" in player_data:
+        try:
+            int(player_data.get("team_id"))
+        except (ValueError, TypeError):
+            return False
+    
+    if "team_role" in player_data:
+        if player_data["team_role"] not in VALID_TEAM_ROLES:
+            return False
+    
+    for field in ["name", "discord_id"]:
+        if field in player_data and not player_data[field].strip():
+            return False
+
+    return True
+
+def create_connection() -> pymysql.Connection:
+    return pymysql.connect(
+        host=os.environ["DB_HOST"],
+        port=int(os.environ["DB_PORT"]),
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        database=os.environ["DB_NAME"],
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+def upload_avatar(avatar_bytes) -> str | None:
+    if not avatar_bytes:
+        return None
+    
+    decoded_bytes = base64.b64decode(avatar_bytes)
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    file_name = f"avatars/{timestamp}.png"
+
+    s3.put_object(
+        Bucket=os.environ["BUCKET_NAME"],
+        Key=file_name,
+        Body=decoded_bytes,
+        ContentType="image/png"
+    )
+
+    return f"https://lockout.nemika.me/{file_name}"
+
+def build_update_query(player_data):
+    """Build dynamic UPDATE query based on provided fields"""
+    update_fields = []
+    values = []
+    
+    if "name" in player_data:
+        update_fields.append("name = %s")
+        values.append(player_data["name"].strip())
+    
+    if "discord_id" in player_data:
+        update_fields.append("discord_id = %s")
+        values.append(player_data["discord_id"].strip())
+    
+    if "team_id" in player_data:
+        update_fields.append("team_id = %s")
+        values.append(int(player_data["team_id"]))
+    
+    if "team_role" in player_data:
+        update_fields.append("team_role = %s")
+        values.append(player_data["team_role"])
+    
+    return update_fields, values
+
+def lambda_handler(event, context):
+    request_id = context.aws_request_id
+    player_data = json.loads(event["body"])
+
+    if not validate_player_data(player_data):   
+        return {
+            'statusCode': 400,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({"error": "Invalid player data"})
+        }
+    
+    player_id = int(player_data.get("player_id"))
+    avatar_bytes = player_data.get("avatar_bytes", "")
+    
+    connection = None
+
+    try:   
+        connection = create_connection()
+
+        avatar_url = None
+        if avatar_bytes:
+            avatar_url = upload_avatar(avatar_bytes)
+        
+        update_fields, values = build_update_query(player_data)
+        
+        if avatar_url:
+            update_fields.append("avatar_url = %s")
+            values.append(avatar_url)
+        
+        if not update_fields:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({"error": "No valid fields to update"})
+            }
+        
+        values.append(player_id)
+        
+        update_sql = f"""
+            UPDATE players 
+            SET {', '.join(update_fields)}
+            WHERE id = %s
+        """
+
+        with connection.cursor() as cursor:
+            rows_affected = cursor.execute(update_sql, values)
+            connection.commit()
+        
+        if rows_affected == 0:
+            return {
+                'statusCode': 404,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({"error": f"Player not found with id: {player_id}"})
+            }
+
+        return {    
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({
+                "message": "Player updated successfully",
+                "player_id": player_id
+            })
+        }
+
+    except pymysql.IntegrityError as e:
+        error_code = e.args[0]
+        error_msg = str(e)
+        
+        if error_code == 1062:  
+            if 'name' in error_msg:
+                error_response = "A player with this name already exists"
+            elif 'discord_id' in error_msg:
+                error_response = "A player with this Discord ID already exists"
+            else:
+                error_response = "Duplicate entry detected"
+        elif error_code == 1452:  
+            if 'team_id' in error_msg:
+                error_response = "Invalid team_id: team does not exist"
+            elif 'discord_id' in error_msg:
+                error_response = "Invalid discord_id: profile does not exist"
+            else:
+                error_response = "Foreign key constraint violation"
+        else:
+            error_response = f"Database constraint violation: {error_msg}"
+        
+        return {
+            "statusCode": 400,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            "body": json.dumps({"error": error_response})
+        }
+    
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            "body": json.dumps({"error": f"Failed to update player: {str(e)}"})
+        }
+
+    finally:
+        if connection:
+            connection.close()
