@@ -53,17 +53,14 @@ def upload_avatar(avatar_bytes) -> str | None:
     return f"https://lockout.nemika.me/{file_name}"
 
 def lambda_handler(event, context):
-
     request_id = context.aws_request_id
 
     player_data = json.loads(event["body"])
 
-    print(f"{request_id} Reveived player_data: {str(player_data)}")
-
     if not validate_player_data(player_data):
-        print(f"{request_id} Invalid player_data")
         return {
             'statusCode': 400,
+            'body': json.dumps("Invalid body data")
         }
     
     name = player_data.get("name")
@@ -75,16 +72,9 @@ def lambda_handler(event, context):
     connection = None
 
     try:
-
-        print(f"{request_id} Connecting to db")
-
         connection = create_connection()
 
-        print(f"{request_id} Connection established, uploading avatar...")
-
         avatar_url = upload_avatar(avatar_bytes)
-
-        print(f"{request_id} Avatar uploaded, creating player...")
 
         with connection.cursor() as cursor:
             cursor.execute(
@@ -93,8 +83,6 @@ def lambda_handler(event, context):
             )
             connection.commit()
             insert_id = cursor.lastrowid
-        
-        print(f"{request_id} Player created. New player id: {insert_id}")
 
         return {    
             'statusCode': 200,
@@ -106,7 +94,6 @@ def lambda_handler(event, context):
     }
 
     except Exception as e:
-        print(f"{request_id} Failed to create player, Error: {str(e)}")
         return {
             "statusCode": 500,
             "body": json.dumps(f"Failed to create player, Error: {str(e)}")

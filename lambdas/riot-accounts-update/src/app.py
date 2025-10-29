@@ -34,10 +34,7 @@ def lambda_handler(event, context):
     request_id = context.aws_request_id
     account_data = json.loads(event["body"])
 
-    print(f"{request_id} Reveived account_data: {str(account_data)}")
-
     if not validate_account_data(account_data):
-        print(f"{request_id} Invalid account_data for request_id")
         return {
             "statusCode": 400,
         }
@@ -48,9 +45,6 @@ def lambda_handler(event, context):
     connection = None
 
     try:
-
-        print(f"{request_id} Connecting to db")
-
         connection = create_connection()
 
         with connection.cursor() as cursor:
@@ -58,8 +52,6 @@ def lambda_handler(event, context):
                 UPDATE_ACCOUNT_SQL, ("true" if is_primary else "false", account_id)
             )
             connection.commit()
-
-        print(f"{request_id} Riot Account Updated")
 
         return {
             "statusCode": 200,
@@ -71,7 +63,6 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
-        print(f"{request_id} Failed to update riot account, Error: {str(e)}")
         return {
             "statusCode": 500,
             "body": json.dumps(f"Failed to update riot account, Error: {str(e)}"),

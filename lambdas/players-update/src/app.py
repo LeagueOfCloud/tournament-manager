@@ -92,10 +92,7 @@ def lambda_handler(event, context):
     request_id = context.aws_request_id
     player_data = json.loads(event["body"])
 
-    print(f"{request_id} Received player_data: {str(player_data)}")
-
-    if not validate_player_data(player_data):
-        print(f"{request_id} Invalid player_data")
+    if not validate_player_data(player_data):   
         return {
             'statusCode': 400,
             'headers': {
@@ -110,13 +107,11 @@ def lambda_handler(event, context):
     
     connection = None
 
-    try:
-        print(f"{request_id} Connecting to db")
+    try:   
         connection = create_connection()
 
         avatar_url = None
         if avatar_bytes:
-            print(f"{request_id} Uploading avatar...")
             avatar_url = upload_avatar(avatar_bytes)
         
         update_fields, values = build_update_query(player_data)
@@ -142,15 +137,12 @@ def lambda_handler(event, context):
             SET {', '.join(update_fields)}
             WHERE id = %s
         """
-        
-        print(f"{request_id} Updating player {player_id} with query: {update_sql}")
 
         with connection.cursor() as cursor:
             rows_affected = cursor.execute(update_sql, values)
             connection.commit()
         
         if rows_affected == 0:
-            print(f"{request_id} No player found with id {player_id}")
             return {
                 'statusCode': 404,
                 'headers': {
@@ -159,8 +151,6 @@ def lambda_handler(event, context):
                 },
                 'body': json.dumps({"error": f"Player not found with id: {player_id}"})
             }
-        
-        print(f"{request_id} Player {player_id} updated successfully")
 
         return {    
             'statusCode': 200,
@@ -177,8 +167,6 @@ def lambda_handler(event, context):
     except pymysql.IntegrityError as e:
         error_code = e.args[0]
         error_msg = str(e)
-        
-        print(f"{request_id} Integrity error: {error_msg}")
         
         if error_code == 1062:  
             if 'name' in error_msg:
@@ -207,7 +195,6 @@ def lambda_handler(event, context):
         }
     
     except Exception as e:
-        print(f"{request_id} Failed to update player, Error: {str(e)}")
         return {
             "statusCode": 500,
             'headers': {

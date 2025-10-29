@@ -20,25 +20,14 @@ def get_player_puuid(summoner_name: str, region: str = "europe") -> str:
 
     headers = {"X-Riot-Token": api_key}
 
-    print(f"Requesting PUUID for {summoner_name} from Riot API...")
+    
 
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
         puuid = response.json().get("puuid")
-        print(f"PUUID successfully retrieved for {summoner_name}.")
+        
         return puuid
-
-    elif response.status_code == 404:
-        print(f"Player '{summoner_name}' not found (404). Check the name and tag.")
-    elif response.status_code == 403:
-        print("Forbidden (403): Invalid or expired API key.")
-    elif response.status_code == 429:
-        print("Rate limit exceeded (429): Too many requests.")
-    elif response.status_code == 500:
-        print("Internal server error (500) on Riot API.")
-    else:
-        print(f"Unexpected error: {response.status_code} - {response.text}")
 
     raise Exception(
         f"Failed to fetch PUUID for {summoner_name}: {response.status_code}"
@@ -75,10 +64,10 @@ def lambda_handler(event, context):
     request_id = context.aws_request_id
     account_data = json.loads(event["body"])
 
-    print(f"{request_id} Reveived account_data: {str(account_data)}")
+    
 
     if not validate_account_data(account_data):
-        print(f"{request_id} Invalid account_data for request_id")
+        
         return {
             "statusCode": 400,
         }
@@ -103,7 +92,7 @@ def lambda_handler(event, context):
 
     try:
 
-        print(f"{request_id} Connecting to db")
+        
 
         connection = create_connection()
 
@@ -114,7 +103,7 @@ def lambda_handler(event, context):
             connection.commit()
             insert_id = cursor.lastrowid
 
-        print(f"{request_id} Riot Account created. New account id id: {insert_id}")
+        
 
         return {
             "statusCode": 200,
@@ -126,7 +115,7 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
-        print(f"{request_id} Failed to create riot account, Error: {str(e)}")
+        
         return {
             "statusCode": 500,
             "body": json.dumps(f"Failed to create riot account, Error: {str(e)}"),
