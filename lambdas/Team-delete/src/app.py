@@ -3,7 +3,7 @@ import os
 import pymysql
 
 DELETE_TEAM_SQL = """
-    DELETE FROM team
+    DELETE FROM teams
     WHERE id = %s
 """
 

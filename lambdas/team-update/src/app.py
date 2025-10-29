@@ -7,7 +7,6 @@ from datetime import datetime
 
 s3 = boto3.client("s3")
 
-VALID_TEAM_ROLES = ['top', 'jungle', 'mid', 'bot', 'support', 'sub']
 
 def validate_team_data(team_data) -> bool:
     if not team_data.get("team_id"):
@@ -19,23 +18,15 @@ def validate_team_data(team_data) -> bool:
         return False
     
     updatable_fields = ["name", "logo_url", "banner_url", "tag"]
-    if not any(field in player_data for field in updatable_fields):
+    if not any(field in team_data for field in updatable_fields):
         return False
     
-    if "team_id" in player_data:
+    if "team_id" in team_data:
         try:
-            int(player_data.get("team_id"))
+            int(team_data.get("team_id"))
         except (ValueError, TypeError):
             return False
     
-    if "team_role" in player_data:
-        if player_data["team_role"] not in VALID_TEAM_ROLES:
-            return False
-    
-    for field in ["name", "discord_id"]:
-        if field in player_data and not player_data[field].strip():
-            return False
-
     return True
 
 def create_connection() -> pymysql.Connection:
@@ -48,13 +39,15 @@ def create_connection() -> pymysql.Connection:
         cursorclass=pymysql.cursors.DictCursor
     )
 
-def upload_avatar(avatar_bytes) -> str | None:
-    if not avatar_bytes:
+def upload_image(image_bytes,location) -> str | None:
+    if not image_bytes:
         return None
     
-    decoded_bytes = base64.b64decode(avatar_bytes)
+    decoded_bytes = base64.b64decode(image_bytes)
+
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    file_name = f"avatars/{timestamp}.png"
+
+    file_name = f"{location}/{timestamp}.png"
 
     s3.put_object(
         Bucket=os.environ["BUCKET_NAME"],
@@ -65,60 +58,60 @@ def upload_avatar(avatar_bytes) -> str | None:
 
     return f"https://lockout.nemika.me/{file_name}"
 
-def build_update_query(player_data):
+def build_update_query(team_data):
     """Build dynamic UPDATE query based on provided fields"""
     update_fields = []
     values = []
     
-    if "name" in player_data:
+    if "name" in team_data:
         update_fields.append("name = %s")
-        values.append(player_data["name"].strip())
+        values.append(team_data["name"].strip())
     
-    if "discord_id" in player_data:
-        update_fields.append("discord_id = %s")
-        values.append(player_data["discord_id"].strip())
+    if "logo_url" in team_data:
+        update_fields.append("logo_url = %s")
+        values.append(team_data["logo_url"].strip())
     
-    if "team_id" in player_data:
-        update_fields.append("team_id = %s")
-        values.append(int(player_data["team_id"]))
+    if "banner_url" in team_data:
+        update_fields.append("banner_url = %s")
+        values.append(team_data["banner_url"])
     
-    if "team_role" in player_data:
-        update_fields.append("team_role = %s")
-        values.append(player_data["team_role"])
+    if "tag" in team_data:
+        update_fields.append("tag = %s")
+        values.append(team_data["tag"])
     
     return update_fields, values
 
 def lambda_handler(event, context):
     request_id = context.aws_request_id
-    player_data = json.loads(event["body"])
+    team_data = json.loads(event["body"])
 
-    if not validate_player_data(player_data):   
+    if not validate_team_data(team_data):   
         return {
             'statusCode': 400,
             'headers': {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps({"error": "Invalid player data"})
+            'body': json.dumps({"error": "Invalid team data"})
         }
     
-    player_id = int(player_data.get("player_id"))
-    avatar_bytes = player_data.get("avatar_bytes", "")
+    team_id = int(team_data.get("team_id"))
+    image_bytes = team_data.get("image_bytes", "")
     
     connection = None
 
     try:   
         connection = create_connection()
 
-        avatar_url = None
-        if avatar_bytes:
-            avatar_url = upload_avatar(avatar_bytes)
+        image_url = None
+        if image_bytes:
+            image_url = upload_image(image_bytes)
         
-        update_fields, values = build_update_query(player_data)
+        update_fields, values = build_update_query(team_data)
         
-        if avatar_url:
-            update_fields.append("avatar_url = %s")
-            values.append(avatar_url)
+        if image_url:
+            update_fields.append("image_url = %s")
+            values.append(image_url)
         
         if not update_fields:
             return {
@@ -130,10 +123,10 @@ def lambda_handler(event, context):
                 'body': json.dumps({"error": "No valid fields to update"})
             }
         
-        values.append(player_id)
+        values.append(team_id)
         
         update_sql = f"""
-            UPDATE players 
+            UPDATE teams 
             SET {', '.join(update_fields)}
             WHERE id = %s
         """
@@ -149,7 +142,7 @@ def lambda_handler(event, context):
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 },
-                'body': json.dumps({"error": f"Player not found with id: {player_id}"})
+                'body': json.dumps({"error": f"team not found with id: {team_id}"})
             }
 
         return {    
@@ -159,8 +152,8 @@ def lambda_handler(event, context):
                 'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps({
-                "message": "Player updated successfully",
-                "player_id": player_id
+                "message": "Team updated successfully",
+                "team_id": team_id
             })
         }
 
@@ -170,18 +163,21 @@ def lambda_handler(event, context):
         
         if error_code == 1062:  
             if 'name' in error_msg:
-                error_response = "A player with this name already exists"
-            elif 'discord_id' in error_msg:
-                error_response = "A player with this Discord ID already exists"
+                error_response = "A team with this name already exists"
+            elif 'logo_url' in error_msg:
+                error_response = "A team with this Logo URL already exists"
+            elif 'banner_url' in error_msg:
+                error_response = "A team with this Banner URL already exists"
+            elif 'tag' in error_msg:
+                error_response = "A team with this Tag already exists"
             else:
                 error_response = "Duplicate entry detected"
+        
+        
         elif error_code == 1452:  
             if 'team_id' in error_msg:
                 error_response = "Invalid team_id: team does not exist"
-            elif 'discord_id' in error_msg:
-                error_response = "Invalid discord_id: profile does not exist"
-            else:
-                error_response = "Foreign key constraint violation"
+
         else:
             error_response = f"Database constraint violation: {error_msg}"
         
@@ -201,7 +197,7 @@ def lambda_handler(event, context):
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            "body": json.dumps({"error": f"Failed to update player: {str(e)}"})
+            "body": json.dumps({"error": f"Failed to update team: {str(e)}"})
         }
 
     finally:
