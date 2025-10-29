@@ -1,4 +1,6 @@
 import pymysql
+import os
+import traceback
 
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
@@ -37,13 +39,16 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM profiles WHERE token = ?", 
+                "SELECT * FROM profiles WHERE token = %s AND ", 
                 (event["headers"]["Authorization"])
             )
-            cursor.fetchone()
-            print(result)
+            result = cursor.fetchone()
+        
+        if result == None:
+            return generatePolicy("null", "Deny")
 
-    except:
+        return generatePolicy(str(result["id"]), "Allow")
+
+    except Exception as e:
+        traceback.print_exc()
         return generatePolicy("null", "Deny")
-
-    return generatePolicy("null", "Deny")
