@@ -2,6 +2,10 @@ import pymysql
 import os
 import traceback
 
+PATH_PERMISSIONS = {
+    "POST /players": "admin"
+}
+
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
         host=os.environ["DB_HOST"],
@@ -12,7 +16,7 @@ def create_connection() -> pymysql.Connection:
         cursorclass=pymysql.cursors.DictCursor
     )
 
-def generatePolicy(principalId, effect):
+def generatePolicy(principalId, effect, error_message = "You are not allowed to do this."):
     authResponse = {}
     authResponse['principalId'] = principalId
     if (effect and METHOD_ARN):
@@ -25,6 +29,11 @@ def generatePolicy(principalId, effect):
         statementOne['Resource'] = METHOD_ARN
         policyDocument['Statement'] = [statementOne]
         authResponse['policyDocument'] = policyDocument
+
+        if effect == "Deny":
+            authResponse['context'] = {
+                'error_message': error_message
+            }
 
     return authResponse
 
@@ -39,15 +48,24 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM profiles WHERE token = %s AND ", 
+                "SELECT * FROM profiles WHERE token = %s", 
                 (event["headers"]["Authorization"])
             )
             result = cursor.fetchone()
         
         if result == None:
-            return generatePolicy("null", "Deny")
+            return generatePolicy("null", "Deny", "Invalid token provided")
 
-        return generatePolicy(str(result["id"]), "Allow")
+        user_type = str(result.get("type", "null")).lower()
+        http_method = event['httpMethod']
+        path = event['path'].rstrip("/")
+
+        required_type = PATH_PERMISSIONS.get(f"{http_method} {path}")
+
+        if required_type and user_type != PATH_PERMISSIONS[f"{http_method} {path}"]:
+            return generatePolicy(user_type, "Deny", f"User type {user_type} is not allowed to execute {http_method} {path}")
+
+        return generatePolicy(user_type, "Allow")
 
     except Exception as e:
         traceback.print_exc()

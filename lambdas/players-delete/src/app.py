@@ -31,25 +31,17 @@ def lambda_handler(event, context):
 
     player_data = json.loads(event["body"])
 
-    print(f"{request_id} Reveived player_data: {str(player_data)}")
-
     if not validate_player_data(player_data):
-        print(f"{request_id} Invalid player_data")
+        
         return {
             'statusCode': 400,
         }
     
-    player_id = player_data.get("player_id")
-    
+    player_id = player_data.get("player_id")    
     connection = None
 
     try:
-
-        print(f"{request_id} Connecting to db")
-
         connection = create_connection()
-
-        print(f"{request_id} Connection established, deleting player...")
 
         with connection.cursor() as cursor:
             cursor.execute(
@@ -67,9 +59,6 @@ def lambda_handler(event, context):
                     'body': json.dumps({"error": f"No player with id: {player_id}"})
                 }
             delete_id = cursor.lastrowid
-            
-        
-        print(f"{request_id} Player deleted. Deleted player id: {player_id}")
 
         return {    
             'statusCode': 200,
@@ -81,7 +70,6 @@ def lambda_handler(event, context):
     }
 
     except Exception as e:
-        print(f"{request_id} Failed to delete player, Error: {str(e)}")
         return {
             "statusCode": 500,
             "body": json.dumps(f"Failed to delete player, Error: {str(e)}")
