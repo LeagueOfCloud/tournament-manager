@@ -69,11 +69,13 @@ def build_update_query(team_data):
     
     if "logo_url" in team_data:
         update_fields.append("logo_url = %s")
-        values.append(team_data["logo_url"].strip())
+        logo_url = upload_image(team_data["logo_url"],"Logo")
+        values.append(logo_url)
     
     if "banner_url" in team_data:
         update_fields.append("banner_url = %s")
-        values.append(team_data["banner_url"])
+        banner_url = upload_image(team_data["banner_url"],"Banner")
+        values.append(banner_url)
     
     if "tag" in team_data:
         update_fields.append("tag = %s")
@@ -96,22 +98,13 @@ def lambda_handler(event, context):
         }
     
     team_id = int(team_data.get("team_id"))
-    image_bytes = team_data.get("image_bytes", "")
     
     connection = None
 
     try:   
         connection = create_connection()
-
-        image_url = None
-        if image_bytes:
-            image_url = upload_image(image_bytes)
         
-        update_fields, values = build_update_query(team_data)
-        
-        if image_url:
-            update_fields.append("image_url = %s")
-            values.append(image_url)
+        update_fields, values = build_update_query(team_data)        
         
         if not update_fields:
             return {
