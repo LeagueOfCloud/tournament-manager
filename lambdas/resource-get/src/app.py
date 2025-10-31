@@ -5,10 +5,10 @@ import pymysql
 
 ROUTES = {
     # Route config (resource -> table/columns/pk)
-    "players": "players",
-    "teams": "teams",
-    "accounts": "riot_accounts",
-    "profiles": "profiles"
+    "players": {"table": "players", "columns": "id, name, discord_id, avatar_url, team_id, team_role"},
+    "teams": {"table": "teams", "columns": "id, name, logo_url, banner_url, tag"},
+    "accounts": {"table": "riot_accounts", "columns": "id, account_name, account_puuid, player_id, is_primary"},
+    "profiles": {"table": "profiles", "columns": "id, name, discord_id, avatar_url, type"},
 }
 
 # Helper functions
@@ -87,7 +87,9 @@ def lambda_handler(event, context):
             print(f"{request_id} Unknown resource: {resource}")
             return _response(404, {"message": "Resource not found"})
 
-        table = ROUTES[resource]
+        cfg = ROUTES[resource]
+        table = cfg["table"]
+        columns = cfg["columns"]
 
         # Pagination for list
         limit = _safe_int(qparams.get("limit"), allow_none=True)
@@ -105,7 +107,7 @@ def lambda_handler(event, context):
                 # LIST (/resource)
                 if record_id is None or str(record_id).strip() == "":
                     list_sql = (
-                        f"SELECT * FROM {table} "
+                        f"SELECT {columns} FROM {table} "
                         f"ORDER BY id DESC LIMIT %s OFFSET %s"
                     )
                     print(f"{request_id} LIST {table} limit={limit} offset={offset}")
@@ -131,7 +133,7 @@ def lambda_handler(event, context):
                     print(f"{request_id} Invalid id for {resource}: {record_id}")
                     return _response(400, {"message": "Invalid id"})
         
-                detail_sql = f"SELECT * FROM {table} WHERE id = %s"
+                detail_sql = f"SELECT {columns} FROM {table} WHERE id = %s"
                 print(f"{request_id} DETAIL {table}.id={record_id_val}")
                 cur.execute(detail_sql, (record_id_val,))
                 row = cur.fetchone()
