@@ -47,7 +47,9 @@ def generatePolicy(principalId, effect, error_message = "You are not allowed to 
 
 def lambda_handler(event, context):
     global METHOD_ARN
+    global TOKEN
     METHOD_ARN = event["methodArn"]
+    TOKEN = event["headers"].get("Authorization") or event["headers"].get("authorization")
 
     connection = None
 
@@ -57,7 +59,7 @@ def lambda_handler(event, context):
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT * FROM profiles WHERE token = %s", 
-                (event["headers"]["Authorization"])
+                (TOKEN)
             )
             result = cursor.fetchone()
         
