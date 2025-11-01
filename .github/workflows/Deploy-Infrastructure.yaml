@@ -13,8 +13,13 @@ env:
   AWS_REGION: eu-west-1
   AWS_DEPLOY_ROLE_ARN: arn:aws:iam::327362716042:role/DeployLambdasWorkflowRole-Role-gwCAit0CoOuQ
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
-  discover-lambdas:
+  build-deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
     outputs:
       lambda-dirs: ${{ steps.find-lambdas.outputs.lambda-dirs }}
