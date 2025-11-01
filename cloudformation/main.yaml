@@ -12,7 +12,6 @@ Resources:
       Name: !Ref AWS::StackName
       StageName: prod
       Auth:
-        InvokeRole: NONE
         Authorizers:
             ApiTokenAuthorizer:
               FunctionArn: !GetAtt ApiAuthenticatorLambda.Arn
