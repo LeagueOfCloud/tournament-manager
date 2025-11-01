@@ -1,0 +1,360 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  ###########################################################
+  # REST-API DEFINITION                                     #
+  ###########################################################
+
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Ref AWS::StackName
+      StageName: prod
+      Cors:
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowMethods: "'GET,OPTIONS,DELETE,POST,PATCH'"
+        AllowOrigin: "'*'"
+        AllowCredentials: false
+      Auth:
+        Authorizers:
+            ApiTokenAuthorizer:
+              FunctionArn: !GetAtt ApiAuthenticatorLambda.Arn
+              FunctionPayloadType: REQUEST
+              Identity:
+                Headers:
+                  - Authorization
+                ReauthorizeEvery: 1
+                
+        AddDefaultAuthorizerToCorsPreflight: false
+        DefaultAuthorizer: ApiTokenAuthorizer
+      EndpointConfiguration:
+        Type: REGIONAL
+
+  LambdaWithS3AccessRole:
+      Type: AWS::IAM::Role
+      Properties:
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement: 
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: S3BucketAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - s3:PutObject
+                  Resource:
+                    - arn:aws:s3:::lockout-tournament-assets
+                    - arn:aws:s3:::lockout-tournament-assets/*
+
+  ApiAuthenticatorLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/api-authenticator/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Environment:
+        Variables:
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+
+  ###########################################################
+  # PLAYER LAMBDAS                                          #
+  ###########################################################
+
+  CreatePlayerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      CodeUri: lambdas/players/create/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /players
+            Method: POST
+            RestApiId: !Ref Api
+      Environment:
+        Variables:
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+          BUCKET_NAME: "lockout-tournament-assets"
+  
+  DeletePlayerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/players/delete/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /players
+            Method: DELETE
+            RestApiId: !Ref Api
+      Environment:
+        Variables:
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+          BUCKET_NAME: "lockout-tournament-assets"
+  
+  UpdatePlayerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      CodeUri: lambdas/players/update/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /players
+            Method: PATCH
+            RestApiId: !Ref Api
+      Environment:
+        Variables:
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+          BUCKET_NAME: "lockout-tournament-assets"
+
+  ###########################################################
+  # RESOURCE GET LAMBDA                                     #
+  ###########################################################
+  
+  ResourceGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/resource-get/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpointPlayers:
+          Type: Api
+          Properties:
+            Path: /players
+            Method: GET
+            RestApiId: !Ref Api
+        ApiEndpointPlayersSpecific:
+          Type: Api
+          Properties:
+            Path: /players/{id}
+            Method: GET
+            RestApiId: !Ref Api
+        ApiEndpointTeams:
+          Type: Api
+          Properties:
+            Path: /teams
+            Method: GET
+            RestApiId: !Ref Api
+        ApiEndpointTeamsSpecific:
+          Type: Api
+          Properties:
+            Path: /teams/{id}
+            Method: GET
+            RestApiId: !Ref Api
+        ApiEndpointRiotAccounts:
+          Type: Api
+          Properties:
+            Path: /riot-accounts
+            Method: GET
+            RestApiId: !Ref Api
+        ApiEndpointRiotAccountsSpecific:
+          Type: Api
+          Properties:
+            Path: /riot-accounts/{id}
+            Method: GET
+            RestApiId: !Ref Api
+        ApiEndpointProfiles:
+          Type: Api
+          Properties:
+            Path: /profiles
+            Method: GET
+            RestApiId: !Ref Api
+        ApiEndpointProfilesSpecific:
+          Type: Api
+          Properties:
+            Path: /profiles/{id}
+            Method: GET
+            RestApiId: !Ref Api
+      Environment:
+        Variables: 
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+
+  ###########################################################
+  # RIOT ACCOUNT LAMBDAS                                    #
+  ###########################################################
+
+  CreateRiotAccountLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/riot-accounts/create/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /riot-accounts
+            Method: POST
+            RestApiId: !Ref Api
+      Environment:
+        Variables: 
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
+
+  DeleteRiotAccountLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/riot-accounts/delete/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /riot-accounts
+              Method: DELETE
+              RestApiId: !Ref Api
+      Environment:
+        Variables: 
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+  
+  UpdateRiotAccountLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/riot-accounts/update/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /riot-accounts
+              Method: PATCH
+              RestApiId: !Ref Api
+      Environment:
+        Variables: 
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+
+  ###########################################################
+  # TEAM LAMBDAS                                            #
+  ###########################################################
+
+  CreateTeamLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      CodeUri: lambdas/teams/create/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /teams
+              Method: POST
+              RestApiId: !Ref Api
+      Environment:
+        Variables:
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+          BUCKET_NAME: "lockout-tournament-assets"
+  
+  DeleteTeamLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/teams/delete/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /teams
+              Method: DELETE
+              RestApiId: !Ref Api
+      Environment:
+        Variables:
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+          BUCKET_NAME: "lockout-tournament-assets"
+  
+  UpdateTeamLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      CodeUri: lambdas/teams/update/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /teams
+            Method: PATCH
+            RestApiId: !Ref Api
+      Environment:
+        Variables:
+          DB_HOST: "3.250.106.184"
+          DB_PORT: "3306"
+          DB_USER: "tournament_user"
+          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
+          DB_NAME: "tournament_db"
+          BUCKET_NAME: "lockout-tournament-assets"
