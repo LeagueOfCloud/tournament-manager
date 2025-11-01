@@ -48,11 +48,11 @@ def generatePolicy(principalId, effect, error_message = "You are not allowed to 
 def lambda_handler(event, context):
     global METHOD_ARN
     global TOKEN
+    METHOD_ARN = event["methodArn"]
 
     if event["httpMethod"] == "OPTIONS":
         return generatePolicy("OPTIONS", "Allow")
 
-    METHOD_ARN = event["methodArn"]
     TOKEN = event["headers"].get("Authorization") or event["headers"].get("authorization")
 
     connection = None
