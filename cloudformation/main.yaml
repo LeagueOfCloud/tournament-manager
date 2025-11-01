@@ -11,6 +11,7 @@ Resources:
     Properties:
       Name: !Ref AWS::StackName
       StageName: prod
+      Cors: '*'
       Auth:
         Authorizers:
             ApiTokenAuthorizer:
