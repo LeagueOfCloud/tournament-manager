@@ -24,6 +24,8 @@ Resources:
               Identity:
                 Headers:
                   - Authorization
+                ReauthorizeEvery: 1
+                
         AddDefaultAuthorizerToCorsPreflight: false
         DefaultAuthorizer: ApiTokenAuthorizer
       EndpointConfiguration:
