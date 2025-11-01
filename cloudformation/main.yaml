@@ -24,6 +24,7 @@ Resources:
               Identity:
                 Headers:
                   - Authorization
+        AddDefaultAuthorizerToCorsPreflight: false
         DefaultAuthorizer: ApiTokenAuthorizer
       EndpointConfiguration:
         Type: REGIONAL
