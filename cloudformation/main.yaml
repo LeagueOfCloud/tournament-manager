@@ -22,6 +22,12 @@ Resources:
                   - Authorization
                 ReauthorizeEvery: 300
         DefaultAuthorizer: ApiTokenAuthorizer
+      Cors: '*'
+      Models:
+        Empty:
+          type: object
+        Error:
+          type: object
       GatewayResponses:
         UNAUTHORIZED:
           StatusCode: 401
