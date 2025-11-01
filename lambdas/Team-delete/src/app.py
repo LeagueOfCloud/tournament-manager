@@ -35,6 +35,10 @@ def lambda_handler(event, context):
         
         return {
             'statusCode': 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
         }
     
     team_id = team_data.get("team_id")    
@@ -72,6 +76,10 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 500,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
             "body": json.dumps(f"Failed to delete Team, Error: {str(e)}")
         }
 

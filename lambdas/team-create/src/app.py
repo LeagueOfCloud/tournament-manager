@@ -55,6 +55,10 @@ def lambda_handler(event, context):
     if not validate_team_data(team_data):
         return {
             'statusCode': 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
             'body': json.dumps("Invalid body data")
         }
     
@@ -92,6 +96,10 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 500,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
             "body": json.dumps(f"Failed to create team, Error: {str(e)}")
         }
 
