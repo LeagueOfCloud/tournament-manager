@@ -19,19 +19,18 @@ Resources:
               Identity:
                 Headers:
                   - Authorization
-                ReauthorizeEvery: 300
         DefaultAuthorizer: ApiTokenAuthorizer
       EndpointConfiguration:
         Type: REGIONAL
-      # GatewayResponses:
-      #   UNAUTHORIZED:
-      #     StatusCode: 401
-      #     ResponseTemplates:
-      #       application/json: '{"message":"$context.authorizer.error_message"}'
-      #   ACCESS_DENIED:
-      #     StatusCode: 403
-      #     ResponseTemplates:
-      #       application/json: '{"message":"$context.authorizer.error_message"}'
+      GatewayResponses:
+        UNAUTHORIZED:
+          StatusCode: 401
+          ResponseTemplates:
+            application/json: '{"message":"$context.authorizer.error_message"}'
+        ACCESS_DENIED:
+          StatusCode: 403
+          ResponseTemplates:
+            application/json: '{"message":"$context.authorizer.error_message"}'
 
   LambdaWithS3AccessRole:
       Type: AWS::IAM::Role
