@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - main
-      - api-iac
-    # paths:
-    #   - 'cloudformation/**'
+    paths:
+      - 'cloudformation/**'
   workflow_dispatch:
 
 env:
