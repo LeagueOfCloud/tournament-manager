@@ -1,0 +1,49 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+      - api-iac
+    # paths:
+    #   - 'cloudformation/**'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: eu-west-1
+  AWS_DEPLOY_ROLE_ARN: arn:aws:iam::327362716042:role/DeployLambdasWorkflowRole-Role-gwCAit0CoOuQ
+
+jobs:
+  discover-lambdas:
+    runs-on: ubuntu-latest
+    outputs:
+      lambda-dirs: ${{ steps.find-lambdas.outputs.lambda-dirs }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: GitHubActions-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+        
+      - name: Build Templates
+        run: |
+          sam validate -t cloudformation/main.yaml
+          sam build -t cloudformation/main.yaml --use-container
+
+      - name: Deploy Stack
+        run: |
+          sam deploy --no-fail-on-empty-changeset --no-confirm-changeset
