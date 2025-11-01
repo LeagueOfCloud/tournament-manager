@@ -22,11 +22,8 @@ Resources:
                   - Authorization
                 ReauthorizeEvery: 300
         DefaultAuthorizer: ApiTokenAuthorizer
-      Models:
-        Empty:
-          type: object
-        Error:
-          type: object
+      EndpointConfiguration:
+        Type: REGIONAL
       GatewayResponses:
         UNAUTHORIZED:
           StatusCode: 401
