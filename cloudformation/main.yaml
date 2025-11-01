@@ -15,6 +15,7 @@ Resources:
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         AllowMethods: "'GET,OPTIONS,DELETE,POST,PATCH'"
         AllowOrigin: "'*'"
+        AllowCredentials: false
       Auth:
         Authorizers:
             ApiTokenAuthorizer:
