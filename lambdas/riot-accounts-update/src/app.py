@@ -37,6 +37,10 @@ def lambda_handler(event, context):
     if not validate_account_data(account_data):
         return {
             "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
         }
 
     account_id = account_data.get("account_id")
@@ -65,6 +69,10 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             "statusCode": 500,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
             "body": json.dumps(f"Failed to update riot account, Error: {str(e)}"),
         }
 
