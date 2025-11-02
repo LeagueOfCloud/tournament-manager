@@ -1,6 +1,12 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  DbSecretArn:
+    Type: String
+  S3AssetsBucket:
+    Type: String
+
 Resources:
   ###########################################################
   # REST-API DEFINITION                                     #
@@ -52,8 +58,8 @@ Resources:
                   Action:
                     - s3:PutObject
                   Resource:
-                    - arn:aws:s3:::lockout-tournament-assets
-                    - arn:aws:s3:::lockout-tournament-assets/*
+                    - !Sub arn:aws:s3:::${S3AssetsBucket}
+                    - !Sub arn:aws:s3:::${S3AssetsBucket}/*
 
   ApiAuthenticatorLambda:
     Type: AWS::Serverless::Function
@@ -64,11 +70,11 @@ Resources:
       Runtime: python3.13
       Environment:
         Variables:
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
 
   ###########################################################
   # PLAYER LAMBDAS                                          #
@@ -91,12 +97,12 @@ Resources:
             RestApiId: !Ref Api
       Environment:
         Variables:
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
-          BUCKET_NAME: "lockout-tournament-assets"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          BUCKET_NAME: !Ref S3AssetsBucket
   
   DeletePlayerLambda:
     Type: AWS::Serverless::Function
@@ -114,12 +120,12 @@ Resources:
             RestApiId: !Ref Api
       Environment:
         Variables:
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
-          BUCKET_NAME: "lockout-tournament-assets"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          BUCKET_NAME: !Ref S3AssetsBucket
   
   UpdatePlayerLambda:
     Type: AWS::Serverless::Function
@@ -138,12 +144,12 @@ Resources:
             RestApiId: !Ref Api
       Environment:
         Variables:
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
-          BUCKET_NAME: "lockout-tournament-assets"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          BUCKET_NAME: !Ref S3AssetsBucket
 
   ###########################################################
   # RESOURCE GET LAMBDA                                     #
@@ -207,11 +213,11 @@ Resources:
             RestApiId: !Ref Api
       Environment:
         Variables: 
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
 
   ###########################################################
   # RIOT ACCOUNT LAMBDAS                                    #
@@ -233,11 +239,11 @@ Resources:
             RestApiId: !Ref Api
       Environment:
         Variables: 
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
           RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
 
   DeleteRiotAccountLambda:
@@ -256,11 +262,11 @@ Resources:
               RestApiId: !Ref Api
       Environment:
         Variables: 
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
   
   UpdateRiotAccountLambda:
     Type: AWS::Serverless::Function
@@ -278,11 +284,11 @@ Resources:
               RestApiId: !Ref Api
       Environment:
         Variables: 
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
 
   ###########################################################
   # TEAM LAMBDAS                                            #
@@ -305,12 +311,12 @@ Resources:
               RestApiId: !Ref Api
       Environment:
         Variables:
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
-          BUCKET_NAME: "lockout-tournament-assets"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          BUCKET_NAME: !Ref S3AssetsBucket
   
   DeleteTeamLambda:
     Type: AWS::Serverless::Function
@@ -328,12 +334,12 @@ Resources:
               RestApiId: !Ref Api
       Environment:
         Variables:
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
-          BUCKET_NAME: "lockout-tournament-assets"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          BUCKET_NAME: !Ref S3AssetsBucket
   
   UpdateTeamLambda:
     Type: AWS::Serverless::Function
@@ -352,9 +358,9 @@ Resources:
             RestApiId: !Ref Api
       Environment:
         Variables:
-          DB_HOST: "3.250.106.184"
-          DB_PORT: "3306"
-          DB_USER: "tournament_user"
-          DB_PASSWORD: "HX&jaa4%TK@wj7K5$eYg"
-          DB_NAME: "tournament_db"
-          BUCKET_NAME: "lockout-tournament-assets"
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          BUCKET_NAME: !Ref S3AssetsBucket
