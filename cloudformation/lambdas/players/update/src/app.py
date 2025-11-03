@@ -18,7 +18,7 @@ def validate_player_data(player_data) -> bool:
     except (ValueError, TypeError):
         return False
     
-    updatable_fields = ["name", "discord_id", "team_role", "team_id", "avatar_bytes"]
+    updatable_fields = ["name", "discord_id", "team_role", "team_id"]
     if not any(field in player_data for field in updatable_fields):
         return False
     
@@ -48,22 +48,23 @@ def create_connection() -> pymysql.Connection:
         cursorclass=pymysql.cursors.DictCursor
     )
 
-def upload_avatar(avatar_bytes) -> str | None:
-    if not avatar_bytes:
-        return None
-    
-    decoded_bytes = base64.b64decode(avatar_bytes)
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    file_name = f"avatars/{timestamp}.png"
+def generate_image_upload_url(location, max_size_mb = 5) -> str | None:
+    max_size_bytes = max_size_mb * 1024 * 1024
+    timestamp = datetime.now().timestamp()
+    file_name = f"{location}/{timestamp}.png"
 
-    s3.put_object(
+    presigned_data = s3.generate_presigned_post(
         Bucket=os.environ["BUCKET_NAME"],
         Key=file_name,
-        Body=decoded_bytes,
-        ContentType="image/png"
+        Fields={"Content-Type": "png"},
+        Conditions=[
+            ["content-length-range", 0, max_size_bytes],
+            {"Content-Type": "png"}
+        ],
+        ExpiresIn=300
     )
 
-    return f"https://lockout.nemika.me/{file_name}"
+    return (f"https://lockout.nemika.me/{file_name}", presigned_data)
 
 def build_update_query(player_data):
     """Build dynamic UPDATE query based on provided fields"""
@@ -81,6 +82,10 @@ def build_update_query(player_data):
     if "team_id" in player_data:
         update_fields.append("team_id = %s")
         values.append(int(player_data["team_id"]))
+
+    if "avatar_url" in player_data:
+        update_fields.append("avatar_url = %s")
+        values.append(team_data["avatar_url"])
     
     if "team_role" in player_data:
         update_fields.append("team_role = %s")
@@ -103,22 +108,20 @@ def lambda_handler(event, context):
         }
     
     player_id = int(player_data.get("player_id"))
-    avatar_bytes = player_data.get("avatar_bytes", "")
     
     connection = None
 
     try:   
         connection = create_connection()
 
-        avatar_url = None
-        if avatar_bytes:
-            avatar_url = upload_avatar(avatar_bytes)
+        upload_data = {}
+
+        if team_data.get("new_avatar"):
+            [avatar_url, avatar_upload_presigned_data] = generate_image_upload_url("avatars", 10)
+            upload_data["avatar_presigned_data"] = avatar_upload_presigned_data
+            player_data["avatar_url"] = avatar_url
         
         update_fields, values = build_update_query(player_data)
-        
-        if avatar_url:
-            update_fields.append("avatar_url = %s")
-            values.append(avatar_url)
         
         if not update_fields:
             return {
@@ -160,7 +163,8 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({
                 "message": "Player updated successfully",
-                "player_id": player_id
+                "player_id": player_id,
+                "upload": upload_data
             })
         }
 
