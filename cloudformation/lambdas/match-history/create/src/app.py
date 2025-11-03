@@ -37,7 +37,7 @@ def fetch_puuids() -> list:
     try:
         connection = create_connection()
         with connection.cursor() as cursor:
-            cursor.execute(GET_PLAYER_UUIDS)
+            cursor.execute(GET_PLAYER_UUIDS_SQL)
             results = cursor.fetchall()
             puuids = [row['account_puuid'] for row in results]
             logger.info(f"Fetched {len(puuids)} PUUIDs from database.")
@@ -60,14 +60,14 @@ def fetch_match_ids() -> dict:
             if response.status_code == 429:
                 retry_after = response.headers.get("Retry-After", "1")
                 logger.warning(f"Rate limited by Riot API. Retry after {retry_after}s.")
-                raise Exception(f"Rate limit exceeded. Retry after {retry_after} seconds.")
+                break
 
             response.raise_for_status()
             return response.json()
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching match {match_id}: {str(e)}")
-            raise
+            logger.error(f"Error fetching match Match ID: {str(e)}")
+            break
 
 
 def lambda_handler(event, context):
@@ -75,29 +75,6 @@ def lambda_handler(event, context):
     logger.info(f"Request ID: {request_id}")
 
     
-    try:
-        body = json.loads(event["body"])
-        match_id = body.get("match_id")
-    except Exception as e:
-        logger.error(f"Invalid request body: {str(e)}")
-        return {
-            "statusCode": 400,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({"message": "Invalid request body"})
-        }
-
-    if not match_id or not match_data:
-        return {
-            "statusCode": 400,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({"message": "Invalid match data"})
-        }
     try:
         match_ids = fetch_match_ids()
     except Exception as e:
@@ -107,8 +84,6 @@ def lambda_handler(event, context):
             "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
             "body": json.dumps({"message": f"Error fetching from Riot API: {str(e)}"})
         }
-
-    encoded_match_data = base64.b64encode(json.dumps(match_data).encode("utf-8"))
 
     connection = create_connection()
 
@@ -130,13 +105,5 @@ def lambda_handler(event, context):
         "headers": {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*"
-        },
-        "body": json.dumps({"message": "Match history created successfully", "match_id": match_id})
+        },    
     }
-
-def validate_match_data(match_data: dict) -> bool:
-    if not match_data:
-        return False
-    if "match_id" not in match_data:
-        return False
-    return True
