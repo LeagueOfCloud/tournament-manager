@@ -101,7 +101,7 @@ def lambda_handler(event, context):
     try:
         match_ids = fetch_match_ids()
     except Exception as e:
-        logger.error(f"Failed to fetch match {match_id}: {str(e)}")
+        logger.error(f"Failed to fetch match IDs: {str(e)}")
         return {
             "statusCode": 502,
             "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
