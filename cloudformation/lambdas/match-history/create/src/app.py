@@ -54,7 +54,7 @@ def fetch_match_data(match_id: str) -> dict:
         headers = {"X-Riot-Token": RIOT_API_KEY}
 
         try:
-            logger.info(f"Fetching match data for {match_id} from {url}")
+            logger.info(f"Fetching match IDs for {puuid} from {url}")
             response = requests.get(url, headers=headers, timeout=10)
 
             if response.status_code == 429:
