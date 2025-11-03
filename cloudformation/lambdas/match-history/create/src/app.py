@@ -12,7 +12,12 @@ s3 = boto3.client("s3")
 RIOT_API_KEY = os.environ["RIOT_API_KEY"]
 REGION = "europe"
 GET_PLAYER_UUIDS_SQL = """
-SELECT account_puuid FROM riot_accounts
+SELECT account_puuid
+FROM riot_accounts
+WHERE last_match_history_fetch IS NULL
+    OR last_match_history_fetch < NOW() - INTERVAL 1 WEEK
+ORDER BY last_match_history_fetch IS NOT NULL, last_match_history_fetch DESC
+LIMIT 5;
 """
 INSERT_MATCH_HISTORY_SQL = """
     INSERT INTO match_history (match_id)

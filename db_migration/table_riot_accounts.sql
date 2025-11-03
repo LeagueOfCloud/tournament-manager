@@ -42,3 +42,6 @@ BEGIN
 END$$
 
 DELIMITER ;
+
+ALTER TABLE tournament_db.riot_accounts
+ADD COLUMN last_match_history_fetch DATETIME DEFAULT NULL;
