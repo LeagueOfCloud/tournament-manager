@@ -110,25 +110,20 @@ def lambda_handler(event, context):
 
     encoded_match_data = base64.b64encode(json.dumps(match_data).encode("utf-8"))
 
-    try:
-        connection = create_connection()
-        with connection.cursor() as cursor:
-            cursor.execute(INSERT_MATCH_HISTORY_SQL, (match_id, encoded_match_data))
-        connection.commit()
-        logger.info(f"Match history for {match_id} inserted successfully.")
-   
-   
-    except Exception as e:
-        return {
-            "statusCode": 500,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({"message": f"Database error: {str(e)}"})
-        }
-    finally:
-        connection.close()
+    connection = create_connection()
+
+    for match_id in match_ids:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(INSERT_MATCH_HISTORY_SQL, (match_id))
+            connection.commit()
+            logger.info(f"Match history for {match_id} inserted successfully.")
+
+
+        except Exception as e:
+            logger.error(f"Could not insert match_id {match_id} to the database: {e}")
+
+    connection.close()
 
     return {
         "statusCode": 201,
