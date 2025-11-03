@@ -66,6 +66,7 @@ def update_timestamp(puuid):
 
 def fetch_match_ids() -> dict:
     puuids = fetch_puuids()
+    match_ids = []
     for puuid in puuids:
         url = f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
         headers = {"X-Riot-Token": RIOT_API_KEY}
@@ -81,12 +82,12 @@ def fetch_match_ids() -> dict:
             update_timestamp(puuid)
 
             response.raise_for_status()
-            return response.json()
+            match_ids += response.json()
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching match Match ID: {str(e)}")
             break
-
+    return match_ids
 
 def lambda_handler(event, context):
     request_id = context.aws_request_id
@@ -114,7 +115,11 @@ def lambda_handler(event, context):
 
 
         except Exception as e:
-            logger.error(f"Could not insert match_id {match_id} to the database: {e}")
+            error_code = e.args[0]
+            if error_code == 1062:
+                pass  # Duplicate entry, ignore
+            else:
+                logger.error(f"Could not insert match_id {match_id} to the database: {e}")
 
     connection.close()
 

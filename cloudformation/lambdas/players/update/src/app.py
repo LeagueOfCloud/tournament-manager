@@ -116,7 +116,7 @@ def lambda_handler(event, context):
 
         upload_data = {}
 
-        if team_data.get("new_avatar"):
+        if player_data.get("new_avatar"):
             [avatar_url, avatar_upload_presigned_data] = generate_image_upload_url("avatars", 10)
             upload_data["avatar_presigned_data"] = avatar_upload_presigned_data
             player_data["avatar_url"] = avatar_url

@@ -369,7 +369,7 @@ Resources:
   # MATCH HISTORY LAMBDA                                   #
   ###########################################################
 
-  CreateMatchHistoryLambda:
+  FetchMatchHistoryLambda:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: lambdas/match-history/create/src/
