@@ -11,7 +11,7 @@ s3 = boto3.client("s3")
 
 RIOT_API_KEY = os.environ["RIOT_API_KEY"]
 REGION = "europe"
-GET_PLAYER_UUIDS = """
+GET_PLAYER_UUIDS_SQL = """
 SELECT account_puuid FROM riot_accounts
 """
 INSERT_MATCH_HISTORY_SQL = """
