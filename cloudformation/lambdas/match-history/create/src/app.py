@@ -55,6 +55,13 @@ def fetch_puuids() -> list:
     except Exception as e: 
         logger.error(f"Error fetching PUUIDs: {str(e)}")
         return []
+    
+def update_timestamp(puuid):
+    connection = create_connection()
+    with connection.cursor() as cursor:
+        cursor.execute(UPDATE_LAST_MATCH_HISTORY_FETCH_SQL, (datetime.now(), puuid))
+    connection.commit()
+    connection.close()
 
 
 def fetch_match_ids() -> dict:
