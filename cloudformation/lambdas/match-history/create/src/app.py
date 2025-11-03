@@ -50,7 +50,7 @@ def fetch_puuids() -> list:
 def fetch_match_data(match_id: str) -> dict:
     puuids = fetch_puuids()
     for puuid in puuids:
-        url = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
+        url = f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
         headers = {"X-Riot-Token": RIOT_API_KEY}
 
         try:
