@@ -78,6 +78,7 @@ def fetch_match_ids() -> dict:
                 retry_after = response.headers.get("Retry-After", "1")
                 logger.warning(f"Rate limited by Riot API. Retry after {retry_after}s.")
                 break
+            update_timestamp(puuid)
 
             response.raise_for_status()
             return response.json()
