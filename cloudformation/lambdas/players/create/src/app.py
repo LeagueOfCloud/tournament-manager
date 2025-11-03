@@ -33,24 +33,23 @@ def create_connection() -> pymysql.Connection:
         cursorclass=pymysql.cursors.DictCursor
     )
 
-def upload_avatar(avatar_bytes) -> str | None:
-    if not avatar_bytes:
-        return None
-    
-    decoded_bytes = base64.b64decode(avatar_bytes)
+def generate_image_upload_url(location, max_size_mb = 5) -> str | None:
+    max_size_bytes = max_size_mb * 1024 * 1024
+    timestamp = datetime.now().timestamp()
+    file_name = f"{location}/{timestamp}.png"
 
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-
-    file_name = f"avatars/{timestamp}.png"
-
-    s3.put_object(
+    presigned_data = s3.generate_presigned_post(
         Bucket=os.environ["BUCKET_NAME"],
         Key=file_name,
-        Body=decoded_bytes,
-        ContentType="image/png"
+        Fields={"Content-Type": "png"},
+        Conditions=[
+            ["content-length-range", 0, max_size_bytes],
+            {"Content-Type": "png"}
+        ],
+        ExpiresIn=300
     )
 
-    return f"https://lockout.nemika.me/{file_name}"
+    return (f"https://lockout.nemika.me/{file_name}", presigned_data)
 
 def lambda_handler(event, context):
     request_id = context.aws_request_id
@@ -68,7 +67,6 @@ def lambda_handler(event, context):
         }
 
     name = player_data.get("name")
-    avatar_bytes = player_data.get("avatar_bytes", "")
     discord_id = player_data.get("discord_id")
     team_id = int(player_data.get("team_id"))
     team_role = player_data.get("team_role")
@@ -78,7 +76,7 @@ def lambda_handler(event, context):
     try:
         connection = create_connection()
 
-        avatar_url = upload_avatar(avatar_bytes)
+        [avatar_url, avatar_upload_presigned_data] = generate_image_upload_url("avatars", 10)
 
         with connection.cursor() as cursor:
             cursor.execute(
@@ -94,7 +92,11 @@ def lambda_handler(event, context):
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            "body": json.dumps(f"Player created: {insert_id}")
+            "body": json.dumps({
+                "message": "Player was created successfully!",
+                "player_id": int(insert_id),
+                "avatar_presigned_data": avatar_upload_presigned_data
+            })
     }
 
     except Exception as e:

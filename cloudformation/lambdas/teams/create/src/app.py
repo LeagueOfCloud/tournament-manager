@@ -13,7 +13,7 @@ INSERT_TEAMS_SQL = """
 """
 
 def validate_team_data(team_data) -> bool:
-    if not all(team_data.get(field, "").strip() for field in ["name", "logo_bytes", "banner_bytes", "tag"]):
+    if not all(team_data.get(field, "").strip() for field in ["name", "tag"]):
         return False
 
     return True
@@ -28,24 +28,23 @@ def create_connection() -> pymysql.Connection:
         cursorclass=pymysql.cursors.DictCursor
     )
 
-def upload_image(image_bytes,location) -> str | None:
-    if not image_bytes:
-        return None
-    
-    decoded_bytes = base64.b64decode(image_bytes)
-
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-
+def generate_image_upload_url(location, max_size_mb = 5) -> str | None:
+    max_size_bytes = max_size_mb * 1024 * 1024
+    timestamp = datetime.now().timestamp()
     file_name = f"{location}/{timestamp}.png"
 
-    s3.put_object(
+    presigned_data = s3.generate_presigned_post(
         Bucket=os.environ["BUCKET_NAME"],
         Key=file_name,
-        Body=decoded_bytes,
-        ContentType="image/png"
+        Fields={"Content-Type": "png"},
+        Conditions=[
+            ["content-length-range", 0, max_size_bytes],
+            {"Content-Type": "png"}
+        ],
+        ExpiresIn=300
     )
 
-    return f"https://lockout.nemika.me/{file_name}"
+    return (f"https://lockout.nemika.me/{file_name}", presigned_data)
 
 def lambda_handler(event, context):
     request_id = context.aws_request_id
@@ -63,18 +62,15 @@ def lambda_handler(event, context):
         }
     
     name = team_data.get("name")
-    logo_bytes = team_data.get("logo_bytes")
-    banner_bytes = team_data.get("banner_bytes")
     tag = team_data.get("tag")
-    
     
     connection = None
 
     try:
         connection = create_connection()
 
-        logo_url = upload_image(logo_bytes,"Logo")
-        banner_url = upload_image(banner_bytes,"Banner")
+        [logo_url, logo_upload_presigned_data] = generate_image_upload_url("teams/logo", 15)
+        [banner_url, banner_upload_presigned_data] = generate_image_upload_url("teams/banner", 50)
 
         with connection.cursor() as cursor:
             cursor.execute(
@@ -90,7 +86,12 @@ def lambda_handler(event, context):
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            "body": json.dumps(f"Team created: {insert_id}")
+            "body": json.dumps({
+                "message": "Team was created successfully!",
+                "new_team_id": int(insert_id),
+                "logo_presigned_data": logo_upload_presigned_data,
+                "banner_presigned_data": banner_upload_presigned_data
+            })
     }
 
     except Exception as e:

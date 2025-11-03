@@ -39,24 +39,23 @@ def create_connection() -> pymysql.Connection:
         cursorclass=pymysql.cursors.DictCursor
     )
 
-def upload_image(image_bytes,location) -> str | None:
-    if not image_bytes:
-        return None
-    
-    decoded_bytes = base64.b64decode(image_bytes)
-
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-
+def generate_image_upload_url(location, max_size_mb = 5) -> str | None:
+    max_size_bytes = max_size_mb * 1024 * 1024
+    timestamp = datetime.now().timestamp()
     file_name = f"{location}/{timestamp}.png"
 
-    s3.put_object(
+    presigned_data = s3.generate_presigned_post(
         Bucket=os.environ["BUCKET_NAME"],
         Key=file_name,
-        Body=decoded_bytes,
-        ContentType="image/png"
+        Fields={"Content-Type": "png"},
+        Conditions=[
+            ["content-length-range", 0, max_size_bytes],
+            {"Content-Type": "png"}
+        ],
+        ExpiresIn=300
     )
 
-    return f"https://lockout.nemika.me/{file_name}"
+    return (f"https://lockout.nemika.me/{file_name}", presigned_data)
 
 def build_update_query(team_data):
     """Build dynamic UPDATE query based on provided fields"""
@@ -69,13 +68,11 @@ def build_update_query(team_data):
     
     if "logo_url" in team_data:
         update_fields.append("logo_url = %s")
-        logo_url = upload_image(team_data["logo_url"],"Logo")
-        values.append(logo_url)
+        values.append(team_data["logo_url"])
     
     if "banner_url" in team_data:
         update_fields.append("banner_url = %s")
-        banner_url = upload_image(team_data["banner_url"],"Banner")
-        values.append(banner_url)
+        values.append(team_data["banner_url"])
     
     if "tag" in team_data:
         update_fields.append("tag = %s")
@@ -103,8 +100,20 @@ def lambda_handler(event, context):
 
     try:   
         connection = create_connection()
+
+        upload_data = {}
+
+        if team_data.get("new_logo"):
+            [logo_url, logo_upload_presigned_data] = generate_image_upload_url("teams/logo", 15)
+            upload_data["logo_presigned_data"] = logo_upload_presigned_data
+            team_data["logo_url"] = logo_url
+
+        if team_data.get("new_banner"):
+            [banner_url, banner_upload_presigned_data] = generate_image_upload_url("teams/banner", 50)
+            upload_data["banner_presigned_data"] = banner_upload_presigned_data
+            team_data["banner_url"] = banner_url
         
-        update_fields, values = build_update_query(team_data)        
+        update_fields, values = build_update_query(team_data)
         
         if not update_fields:
             return {
@@ -146,7 +155,8 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({
                 "message": "Team updated successfully",
-                "team_id": team_id
+                "team_id": team_id,
+                "upload": upload_data
             })
         }
 
