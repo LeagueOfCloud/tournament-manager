@@ -99,7 +99,7 @@ def lambda_handler(event, context):
             "body": json.dumps({"message": "Invalid match data"})
         }
     try:
-        match_data = fetch_match_data(match_id)
+        match_ids = fetch_match_ids()
     except Exception as e:
         logger.error(f"Failed to fetch match {match_id}: {str(e)}")
         return {
