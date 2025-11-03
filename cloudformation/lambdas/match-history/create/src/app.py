@@ -23,6 +23,11 @@ INSERT_MATCH_HISTORY_SQL = """
     INSERT INTO match_history (match_id)
     VALUES (%s)
 """
+UPDATE_LAST_MATCH_HISTORY_FETCH_SQL = """
+UPDATE riot_accounts
+SET last_match_history_fetch = %s
+WHERE account_puuid = %s
+"""
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
