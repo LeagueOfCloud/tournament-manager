@@ -33,7 +33,7 @@ def generate_image_upload_url(location, max_size_mb = 5) -> str | None:
     timestamp = datetime.now().timestamp()
     file_name = f"{location}/{timestamp}.png"
 
-    post = s3.generate_presigned_post(
+    presigned_data = s3.generate_presigned_post(
         Bucket=os.environ["BUCKET_NAME"],
         Key=file_name,
         Fields={"Content-Type": "png"},
@@ -44,9 +44,7 @@ def generate_image_upload_url(location, max_size_mb = 5) -> str | None:
         ExpiresIn=300
     )
 
-    upload_url = post["url"]
-
-    return (f"https://lockout.nemika.me/{file_name}", upload_url)
+    return (f"https://lockout.nemika.me/{file_name}", presigned_data)
 
 def lambda_handler(event, context):
     request_id = context.aws_request_id
@@ -71,8 +69,8 @@ def lambda_handler(event, context):
     try:
         connection = create_connection()
 
-        [logo_url, logo_upload_url] = generate_image_upload_url("teams/logo", 15)
-        [banner_url, banner_upload_url] = generate_image_upload_url("teams/banner", 50)
+        [logo_url, logo_upload_presigned_data] = generate_image_upload_url("teams/logo", 15)
+        [banner_url, banner_upload_presigned_data] = generate_image_upload_url("teams/banner", 50)
 
         with connection.cursor() as cursor:
             cursor.execute(
@@ -91,8 +89,8 @@ def lambda_handler(event, context):
             "body": json.dumps({
                 "message": "Team was created successfully!",
                 "new_team_id": int(insert_id),
-                "logo_upload_url": logo_upload_url,
-                "banner_upload_url": banner_upload_url
+                "logo_presigned_data": logo_upload_presigned_data,
+                "banner_presigned_data": banner_upload_presigned_data
             })
     }
 
