@@ -10,7 +10,7 @@ from datetime import datetime
 s3 = boto3.client("s3")
 
 RIOT_API_KEY = os.environ["RIOT_API_KEY"]
-REGION = os.environ.get('REGION', 'euw1')
+REGION = "europe"
 GET_PLAYER_UUIDS = """
 SELECT account_puuid FROM riot_accounts
 """
