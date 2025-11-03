@@ -11,6 +11,9 @@ s3 = boto3.client("s3")
 
 RIOT_API_KEY = os.environ["RIOT_API_KEY"]
 REGION = os.environ.get('REGION', 'euw1')
+GET_PLAYER_UUIDS = """
+SELECT account_puuid FROM riot_accounts
+"""
 INSERT_MATCH_HISTORY_SQL = """
     INSERT INTO match_history (match_id, match_data)
     VALUES (%s, %s)
@@ -29,25 +32,42 @@ def create_connection() -> pymysql.Connection:
         cursorclass=pymysql.cursors.DictCursor
     )
 
-def fetch_match_data(match_id: str) -> dict:
-    url = f"https://europe.api.riotgames.com/lol/match/v5/matches/{match_id}"
-    headers = {"X-Riot-Token": RIOT_API_KEY}
-
+def fetch_puuids() -> list:
+    connection = None
     try:
-        logger.info(f"Fetching match data for {match_id} from {url}")
-        response = requests.get(url, headers=headers, timeout=10)
+        connection = create_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(GET_PLAYER_UUIDS)
+            results = cursor.fetchall()
+            puuids = [row['account_puuid'] for row in results]
+            logger.info(f"Fetched {len(puuids)} PUUIDs from database.")
+            return puuids
+    except Exception as e: 
+        logger.error(f"Error fetching PUUIDs: {str(e)}")
+        return []
 
-        if response.status_code == 429:
-            retry_after = response.headers.get("Retry-After", "1")
-            logger.warning(f"Rate limited by Riot API. Retry after {retry_after}s.")
-            raise Exception(f"Rate limit exceeded. Retry after {retry_after} seconds.")
 
-        response.raise_for_status()
-        return response.json()
+def fetch_match_data(match_id: str) -> dict:
+    puuids = fetch_puuids()
+    for puuid in puuids:
+        url = f"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
+        headers = {"X-Riot-Token": RIOT_API_KEY}
 
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error fetching match {match_id}: {str(e)}")
-        raise
+        try:
+            logger.info(f"Fetching match data for {match_id} from {url}")
+            response = requests.get(url, headers=headers, timeout=10)
+
+            if response.status_code == 429:
+                retry_after = response.headers.get("Retry-After", "1")
+                logger.warning(f"Rate limited by Riot API. Retry after {retry_after}s.")
+                raise Exception(f"Rate limit exceeded. Retry after {retry_after} seconds.")
+
+            response.raise_for_status()
+            return response.json()
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching match {match_id}: {str(e)}")
+            raise
 
 
 def lambda_handler(event, context):
