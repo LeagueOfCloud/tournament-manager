@@ -380,7 +380,7 @@ Resources:
         ApiEndpoint:
             Type: Api
             Properties:
-              Path: /match_history
+              Path: /match-history
               Method: POST
               RestApiId: !Ref Api
       Environment:
