@@ -15,8 +15,8 @@ GET_PLAYER_UUIDS_SQL = """
 SELECT account_puuid FROM riot_accounts
 """
 INSERT_MATCH_HISTORY_SQL = """
-    INSERT INTO match_history (match_id, match_data)
-    VALUES (%s, %s)
+    INSERT INTO match_history (match_id)
+    VALUES (%s)
 """
 
 logger = logging.getLogger()
