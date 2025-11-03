@@ -47,7 +47,7 @@ def fetch_puuids() -> list:
         return []
 
 
-def fetch_match_data(match_id: str) -> dict:
+def fetch_match_ids() -> dict:
     puuids = fetch_puuids()
     for puuid in puuids:
         url = f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
