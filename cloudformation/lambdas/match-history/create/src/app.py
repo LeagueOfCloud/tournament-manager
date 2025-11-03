@@ -17,7 +17,7 @@ INSERT_MATCH_HISTORY_SQL = """
 """
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO
+logger.setLevel(logging.INFO)
 
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
