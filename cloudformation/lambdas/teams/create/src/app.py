@@ -34,7 +34,7 @@ def generate_image_upload_url(location, max_size_mb = 5) -> str | None:
     file_name = f"{location}/{timestamp}.png"
 
     post = s3.generate_presigned_post(
-        Bucket=bucket,
+        Bucket=os.environ["BUCKET_NAME"],
         Key=file_name,
         Fields={"Content-Type": "png"},
         Conditions=[
