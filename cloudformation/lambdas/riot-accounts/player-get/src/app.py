@@ -33,7 +33,7 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT (id, account_name, account_puuid, player_id, is_primary) FROM riot_accounts WHERE player_id = %s",
+                "SELECT id, account_name, account_puuid, player_id, is_primary FROM riot_accounts WHERE player_id = %s",
                 (player_id)
             )
 
