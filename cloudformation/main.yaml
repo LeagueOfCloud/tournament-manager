@@ -300,7 +300,7 @@ Resources:
         ApiEndpoint:
           Type: Api
           Properties:
-            Path: /riot-accounts/{player_id}
+            Path: /riot-accounts/player/{player_id}
             Method: GET
             RestApiId: !Ref Api
       Environment:
