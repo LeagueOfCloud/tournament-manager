@@ -125,7 +125,6 @@ Resources:
           DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
           DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
           DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          BUCKET_NAME: !Ref S3AssetsBucket
   
   UpdatePlayerLambda:
     Type: AWS::Serverless::Function
@@ -284,6 +283,28 @@ Resources:
               RestApiId: !Ref Api
       Environment:
         Variables: 
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+
+  GetAccountsFromPlayerIdLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/riot-accounts/player-get/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /riot-accounts/{player_id}
+            Method: GET
+            RestApiId: !Ref Api
+      Environment:
+        Variables:
           DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
           DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
           DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
