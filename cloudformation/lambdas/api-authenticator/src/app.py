@@ -13,6 +13,7 @@ PATH_PERMISSIONS = {
     "DELETE /riot-accounts": "admin",
     "PUT /riot-accounts": "admin",
     "POST /match-history": "admin",
+    "GET /riot-accounts/{id}": "admin"
 }
 
 def create_connection() -> pymysql.Connection:
@@ -73,7 +74,7 @@ def lambda_handler(event, context):
 
         user_type = str(result.get("type", "null")).lower()
         http_method = event['httpMethod']
-        path = event['path'].rstrip("/")
+        path = event['resource'].rstrip("/")
 
         required_type = PATH_PERMISSIONS.get(f"{http_method} {path}")
 
