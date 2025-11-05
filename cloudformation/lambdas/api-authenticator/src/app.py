@@ -4,17 +4,22 @@ import traceback
 
 PATH_PERMISSIONS = {
     "GET /players/{id}": "admin",
+    "GET /players": "admin",
     "POST /players": "admin",
     "DELETE /players": "admin",
     "PUT /players": "admin",
+    "GET /teams": "admin",
+    "GET /teams/{id}": "admin",
     "POST /teams": "admin",
     "DELETE /teams": "admin",
     "PUT /teams": "admin",
+    "GET /riot-accounts": "admin",
+    "GET /riot-accounts/{id}": "admin",
+    "GET /riot-accounts/player/{player_id}": "admin",
     "POST /riot-accounts": "admin",
     "DELETE /riot-accounts": "admin",
     "PUT /riot-accounts": "admin",
     "POST /match-history": "admin",
-    "GET /riot-accounts/player/{player_id}": "admin",
 }
 
 def create_connection() -> pymysql.Connection:

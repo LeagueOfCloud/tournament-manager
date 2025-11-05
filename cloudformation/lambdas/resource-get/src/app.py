@@ -7,7 +7,7 @@ ROUTES = {
     # Route config (resource -> table/columns/pk)
     "players": {"table": "players", "columns": "id, name, discord_id, avatar_url, team_id, team_role"},
     "teams": {"table": "teams", "columns": "id, name, logo_url, banner_url, tag"},
-    "accounts": {"table": "riot_accounts", "columns": "id, account_name, account_puuid, player_id, is_primary"},
+    "riot-accounts": {"table": "riot_accounts", "columns": "id, account_name, account_puuid, player_id, is_primary"},
     "profiles": {"table": "profiles", "columns": "id, name, discord_id, avatar_url, type"},
 }
 
