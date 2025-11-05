@@ -85,7 +85,7 @@ def build_update_query(player_data):
 
     if "avatar_url" in player_data:
         update_fields.append("avatar_url = %s")
-        values.append(team_data["avatar_url"])
+        values.append(player_data["avatar_url"])
     
     if "team_role" in player_data:
         update_fields.append("team_role = %s")
