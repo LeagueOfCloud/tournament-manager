@@ -45,3 +45,6 @@ DELIMITER ;
 
 ALTER TABLE tournament_db.riot_accounts
 ADD COLUMN last_match_history_fetch DATETIME DEFAULT NULL;
+
+ALTER TABLE tournament_db.riot_accounts
+ADD COLUMN last_player_stats_fetch DATETIME DEFAULT NULL;
