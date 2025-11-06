@@ -6,9 +6,9 @@ import requests
 from datetime import datetime
 
 RIOT_API_KEY = os.environ["RIOT_API_KEY"]
-REGION = "EUW1"
+region = "EUW1"
 connection = None
-league_entries_url = f"https://{REGION}.api.riotgames.com/lol/league/v4/entries/by-puuid"
+league_entries_url = f"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid"
 logger = logging.getLogger()
 
 GET_PLAYER_UUIDS_SQL = """
