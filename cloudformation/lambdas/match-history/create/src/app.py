@@ -63,30 +63,41 @@ def update_timestamp(puuid):
     connection.commit()
     connection.close()
 
+def fetch_queue_type(puuid, queue) -> list:
+    two_weeks_ago = datetime.datetime.utcnow() - datetime.timedelta(weeks=2)
+    start_time_epoch = int(two_weeks_ago.timestamp())
+    match_ids = []
+    url = f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={start_time_epoch}&{queue}"
+    headers = {"X-Riot-Token": RIOT_API_KEY}
 
-def fetch_match_ids() -> dict:
+    try:
+        logger.info(f"Fetching match IDs for {puuid} from {url}")
+        response = requests.get(url, headers=headers, timeout=10)
+
+        if response.status_code == 429:
+            retry_after = response.headers.get("Retry-After", "1")
+            logger.warning(f"Rate limited by Riot API. Retry after {retry_after}s.")
+            return []
+        update_timestamp(puuid)
+
+        response.raise_for_status()
+        match_ids += response.json()
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching match Match ID: {str(e)}")
+        return []
+
+
+def fetch_match_ids() -> list:
     puuids = fetch_puuids()
     match_ids = []
+   
     for puuid in puuids:
-        url = f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
-        headers = {"X-Riot-Token": RIOT_API_KEY}
-
-        try:
-            logger.info(f"Fetching match IDs for {puuid} from {url}")
-            response = requests.get(url, headers=headers, timeout=10)
-
-            if response.status_code == 429:
-                retry_after = response.headers.get("Retry-After", "1")
-                logger.warning(f"Rate limited by Riot API. Retry after {retry_after}s.")
-                break
-            update_timestamp(puuid)
-
-            response.raise_for_status()
-            match_ids += response.json()
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching match Match ID: {str(e)}")
-            break
+        match_ids += fetch_queue_type(puuid, "queue=420") # Ranked Solo/Duo
+        if len(match_ids) < 20:
+            match_ids += fetch_queue_type(puuid, "queue=440") # Ranked Flex
+        if len(match_ids) < 20:
+            match_ids += fetch_queue_type(puuid, "queue=400") # Normal Draft
     return match_ids
 
 def lambda_handler(event, context):
