@@ -79,11 +79,6 @@ def save_player_stats(puuid, league_entries):
     except Exception as e: 
         logger.error(f"Error fetching match_ids: {str(e)}")
 
-def close_connection():
-    connection = get_connection()
-    connection.close()
-    connection = None
-
 def lambda_handler(event, context):
     puuids = fetch_puuids()
     for puuid in puuids:
@@ -92,7 +87,6 @@ def lambda_handler(event, context):
             save_player_stats(puuid, league_entries)
         except Exception as e:
             logger.error(f"Error fetching league_entries for puuid: {puuid}, error: {str(e)}")
-            close_connection()
             return {
                 "statusCode": 500,
                 "headers": {
@@ -100,8 +94,6 @@ def lambda_handler(event, context):
                     "Access-Control-Allow-Origin": "*"
                 },
             }
-
-    close_connection()
 
     return {
         "statusCode": 201,
