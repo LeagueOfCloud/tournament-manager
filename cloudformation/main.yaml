@@ -387,7 +387,7 @@ Resources:
           BUCKET_NAME: !Ref S3AssetsBucket
 
   ###########################################################
-  # MATCH HISTORY LAMBDA                                   #
+  # MATCH HISTORY LAMBDAS                                   #
   ###########################################################
 
   FetchMatchHistoryLambda:
@@ -412,4 +412,27 @@ Resources:
           DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
           DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
           RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
-          
+  
+  UpdateMatchHistoryLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/match-history/update/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /match-history
+              Method: PUT
+              RestApiId: !Ref Api
+      Environment:
+        Variables:
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
+         
