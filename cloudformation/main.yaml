@@ -393,7 +393,7 @@ Resources:
           BUCKET_NAME: !Ref S3AssetsBucket
 
   ###########################################################
-  # MATCH HISTORY LAMBDA                                   #
+  # MATCH HISTORY LAMBDAS                                   #
   ###########################################################
 
   FetchMatchHistoryLambda:
@@ -418,37 +418,11 @@ Resources:
           DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
           DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
           RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
-          
-  ###########################################################
-  # CONFIG LAMBDAS                                          #
-  ###########################################################
-
-  CreateConfigLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: lambdas/config/create/src/
-      Handler: app.lambda_handler
-      Timeout: 30
-      Runtime: python3.13
-      Events:
-        ApiEndpoint:
-          Type: Api
-          Properties:
-            Path: /config
-            Method: POST
-            RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
   
-  DeleteConfigLambda:
+  UpdateMatchHistoryLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/config/delete/src/
+      CodeUri: lambdas/match-history/update/src/
       Handler: app.lambda_handler
       Timeout: 30
       Runtime: python3.13
@@ -456,8 +430,8 @@ Resources:
         ApiEndpoint:
             Type: Api
             Properties:
-              Path: /config
-              Method: DELETE
+              Path: /match-history
+              Method: PUT
               RestApiId: !Ref Api
       Environment:
         Variables:
@@ -466,21 +440,26 @@ Resources:
           DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
           DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
           DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
 
-  UpdateConfigLambda:
+  ###########################################################
+  # LEAGUE STATS LAMBDAS                                    #
+  ###########################################################
+
+  FetchPlayerStatsLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/config/update/src/
+      CodeUri: lambdas/player-stats/create/src/
       Handler: app.lambda_handler
       Timeout: 30
       Runtime: python3.13
       Events:
         ApiEndpoint:
-          Type: Api
-          Properties:
-            Path: /config
-            Method: PATCH
-            RestApiId: !Ref Api
+            Type: Api
+            Properties:
+              Path: /player-stats
+              Method: POST
+              RestApiId: !Ref Api
       Environment:
         Variables:
           DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
@@ -488,3 +467,4 @@ Resources:
           DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
           DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
           DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"

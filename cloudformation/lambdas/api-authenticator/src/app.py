@@ -24,6 +24,7 @@ PATH_PERMISSIONS = {
     "PATCH /config": "admin",
     "POST /config": "admin",
     "DELETE /config": "admin",
+    "PUT /match-history": "admin",
 }
 
 def create_connection() -> pymysql.Connection:

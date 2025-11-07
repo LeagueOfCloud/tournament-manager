@@ -5,7 +5,8 @@ import boto3
 import pymysql
 import requests
 import logging
-from datetime import datetime
+import datetime
+
 
 s3 = boto3.client("s3")
 
@@ -50,7 +51,6 @@ def fetch_puuids() -> list:
             cursor.execute(GET_PLAYER_UUIDS_SQL)
             results = cursor.fetchall()
             puuids = [row['account_puuid'] for row in results]
-            logger.info(f"Fetched {len(puuids)} PUUIDs from database.")
             return puuids
     except Exception as e: 
         logger.error(f"Error fetching PUUIDs: {str(e)}")
@@ -59,41 +59,49 @@ def fetch_puuids() -> list:
 def update_timestamp(puuid):
     connection = create_connection()
     with connection.cursor() as cursor:
-        cursor.execute(UPDATE_LAST_MATCH_HISTORY_FETCH_SQL, (datetime.now(), puuid))
+        cursor.execute(UPDATE_LAST_MATCH_HISTORY_FETCH_SQL, (datetime.datetime.now(), puuid))
     connection.commit()
     connection.close()
 
+def fetch_queue_type(puuid, queue_id) -> list:
+    two_weeks_ago = datetime.datetime.now() - datetime.timedelta(weeks=2)
+    start_time_epoch = int(two_weeks_ago.timestamp())
+    match_ids = []
+    url = f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?startTime={start_time_epoch}&queue={queue_id}"
+    headers = {"X-Riot-Token": RIOT_API_KEY}
 
-def fetch_match_ids() -> dict:
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+
+        if response.status_code == 429:
+            retry_after = response.headers.get("Retry-After", "1")
+            logger.warning(f"Rate limited by Riot API. Retry after {retry_after}s.")
+            return match_ids
+        update_timestamp(puuid)
+
+        response.raise_for_status()
+        match_ids += response.json()
+        return match_ids
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching match Match ID: {str(e)}")
+        return match_ids
+
+
+def fetch_match_ids() -> list:
     puuids = fetch_puuids()
     match_ids = []
+   
     for puuid in puuids:
-        url = f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
-        headers = {"X-Riot-Token": RIOT_API_KEY}
-
-        try:
-            logger.info(f"Fetching match IDs for {puuid} from {url}")
-            response = requests.get(url, headers=headers, timeout=10)
-
-            if response.status_code == 429:
-                retry_after = response.headers.get("Retry-After", "1")
-                logger.warning(f"Rate limited by Riot API. Retry after {retry_after}s.")
-                break
-            update_timestamp(puuid)
-
-            response.raise_for_status()
-            match_ids += response.json()
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error fetching match Match ID: {str(e)}")
-            break
+        match_ids += fetch_queue_type(puuid, 420) # Ranked Solo/Duo
+        if len(match_ids) < 20:
+            match_ids += fetch_queue_type(puuid, 440) # Ranked Flex
+        if len(match_ids) < 20:
+            match_ids += fetch_queue_type(puuid, 400) # Normal Draft
     return match_ids
 
 def lambda_handler(event, context):
     request_id = context.aws_request_id
-    logger.info(f"Request ID: {request_id}")
-
-    
     try:
         match_ids = fetch_match_ids()
     except Exception as e:
@@ -111,7 +119,6 @@ def lambda_handler(event, context):
             with connection.cursor() as cursor:
                 cursor.execute(INSERT_MATCH_HISTORY_SQL, (match_id))
             connection.commit()
-            logger.info(f"Match history for {match_id} inserted successfully.")
 
 
         except Exception as e:
