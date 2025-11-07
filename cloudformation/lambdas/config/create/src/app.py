@@ -10,10 +10,7 @@ INSERT_CONFIG_SQL = """
 """
 
 def validate_config_data(config_data) -> bool:
-    if not all(config_data.get(field, "").strip() for field in ["name"]):
-        return False
-    
-    return True
+    return config_data.get("name", "").strip()
 
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
