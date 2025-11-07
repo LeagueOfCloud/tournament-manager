@@ -113,8 +113,9 @@ def lambda_handler(event, context):
                         )
                         cur.execute(list_sql)
                         rows = cur.fetchall()
+                        formatted_rows = {row["name"]: row["value"] for row in rows}
 
-                        return _response(200, rows)
+                        return _response(200, formatted_rows)
                     
                     elif str(record_id).strip() == "":
                         list_sql = (
