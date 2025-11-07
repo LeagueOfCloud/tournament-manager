@@ -210,6 +210,12 @@ Resources:
             Path: /profiles/{id}
             Method: GET
             RestApiId: !Ref Api
+        ApiEndpointConfigs:
+          Type: Api
+          Properties:
+            Path: /configs
+            Method: GET
+            RestApiId: !Ref Api
       Environment:
         Variables: 
           DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
