@@ -20,11 +20,11 @@ PATH_PERMISSIONS = {
     "DELETE /riot-accounts": "admin",
     "PUT /riot-accounts": "admin",
     "POST /match-history": "admin",
+    "PUT /match-history": "admin",
     "GET /config": "admin",
     "PATCH /config": "admin",
     "POST /config": "admin",
     "DELETE /config": "admin",
-    "PUT /match-history": "admin",
 }
 
 def create_connection() -> pymysql.Connection:
