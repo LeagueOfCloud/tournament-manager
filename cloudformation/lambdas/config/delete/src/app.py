@@ -36,7 +36,7 @@ def lambda_handler(event, context):
             }
         }
     
-    config_name = config_data.get("name")    
+    config_name = config_data.get("name").strip()
     connection = None
 
     try:
