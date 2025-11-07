@@ -106,7 +106,7 @@ def lambda_handler(event, context):
 
             with conn.cursor() as cur:
                 # LIST (/resource)
-                if record_id is None:
+                if not record_id:
                     if table == "config":
                         list_sql = (
                             f"SELECT {columns} FROM {table} "
@@ -117,7 +117,7 @@ def lambda_handler(event, context):
 
                         return _response(200, formatted_rows)
                     
-                    elif str(record_id).strip() == "":
+                    else:
                         list_sql = (
                             f"SELECT {columns} FROM {table} "
                             f"ORDER BY id DESC LIMIT %s OFFSET %s"
