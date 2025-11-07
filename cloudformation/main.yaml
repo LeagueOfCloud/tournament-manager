@@ -213,7 +213,7 @@ Resources:
         ApiEndpointConfigs:
           Type: Api
           Properties:
-            Path: /configs
+            Path: /config
             Method: GET
             RestApiId: !Ref Api
       Environment:
