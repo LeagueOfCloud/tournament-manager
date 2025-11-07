@@ -9,6 +9,7 @@ ROUTES = {
     "teams": {"table": "teams", "columns": "id, name, logo_url, banner_url, tag"},
     "riot-accounts": {"table": "riot_accounts", "columns": "id, account_name, account_puuid, player_id, is_primary"},
     "profiles": {"table": "profiles", "columns": "id, name, discord_id, avatar_url, type"},
+    "config": {"table": "config", "columns": "name, value"},
 }
 
 # Helper functions
@@ -105,26 +106,37 @@ def lambda_handler(event, context):
 
             with conn.cursor() as cur:
                 # LIST (/resource)
-                if record_id is None or str(record_id).strip() == "":
-                    list_sql = (
-                        f"SELECT {columns} FROM {table} "
-                        f"ORDER BY id DESC LIMIT %s OFFSET %s"
-                    )
-                    print(f"{request_id} LIST {table} limit={limit} offset={offset}")
-                    cur.execute(list_sql, (limit, offset))
-                    rows = cur.fetchall()
+                if not record_id:
+                    if table == "config":
+                        list_sql = (
+                            f"SELECT {columns} FROM {table} "
+                        )
+                        cur.execute(list_sql)
+                        rows = cur.fetchall()
+                        formatted_rows = {row["name"]: row["value"] for row in rows}
 
-                    count_sql = f"SELECT COUNT(*) AS total FROM {table}"
-                    cur.execute(count_sql)
-                    total = cur.fetchone()["total"]
+                        return _response(200, formatted_rows)
+                    
+                    else:
+                        list_sql = (
+                            f"SELECT {columns} FROM {table} "
+                            f"ORDER BY id DESC LIMIT %s OFFSET %s"
+                        )
+                        print(f"{request_id} LIST {table} limit={limit} offset={offset}")
+                        cur.execute(list_sql, (limit, offset))
+                        rows = cur.fetchall()
 
-                    return _response(200, {
-                        "items": rows,
-                        "count": len(rows),
-                        "total": total,
-                        "limit": limit,
-                        "offset": offset
-                    })
+                        count_sql = f"SELECT COUNT(*) AS total FROM {table}"
+                        cur.execute(count_sql)
+                        total = cur.fetchone()["total"]
+
+                        return _response(200, {
+                            "items": rows,
+                            "count": len(rows),
+                            "total": total,
+                            "limit": limit,
+                            "offset": offset
+                        })
 
                 # DETAIL (/resource/{id})
                 try:
