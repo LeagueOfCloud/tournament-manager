@@ -9,7 +9,7 @@ ROUTES = {
     "teams": {"table": "teams", "columns": "id, name, logo_url, banner_url, tag"},
     "riot-accounts": {"table": "riot_accounts", "columns": "id, account_name, account_puuid, player_id, is_primary"},
     "profiles": {"table": "profiles", "columns": "id, name, discord_id, avatar_url, type"},
-    "configs": {"table": "config", "columns": "name, value"},
+    "config": {"table": "config", "columns": "name, value"},
 }
 
 # Helper functions
