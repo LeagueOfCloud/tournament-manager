@@ -48,7 +48,7 @@ def lambda_handler(event, context):
             ),
         }
     
-    valid_items = []
+    valid_items = {}
     invalid_items = []
     for name, value in body.items():
         if not isinstance(name, str) or not name.strip():
