@@ -9,9 +9,6 @@ INSERT_CONFIG_SQL = """
     VALUES (%s, %s)
 """
 
-def validate_config_item(config_item) -> bool:
-    return config_item.get("name", "").strip()
-
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
         host=os.environ["DB_HOST"],
@@ -36,36 +33,32 @@ def lambda_handler(event, context):
             "body": json.dumps({"error": "Invalid JSON body"}),
         }
     
-    # json | list of json -> list
-    if isinstance(body, dict):
-        items = [body]
-    elif isinstance(body, list):
-        items = body
-    else:
+    # only dicts allowed
+    if not isinstance(body, dict):
         return {
             "statusCode": 400,
             "headers": {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
             },
-            "body": json.dumps({"error": "Body must be an object or a list of objects"}),
+            "body": json.dumps(
+                {
+                    "error": "Body must be a JSON object of key: value pairs, e.g. {\"KEY\": \"value\"}"
+                }
+            ),
         }
     
     valid_items = []
     invalid_items = []
-    for item in items:
-        if validate_config_item(item):
-            val = item.get("value", None)
-            if isinstance(val, str):
-                val = val.strip()
-            valid_items.append(
-                {
-                    "name": item["name"].strip(),
-                    "value": val,
-                }
-            )
-        else:
-            invalid_items.append(item)
+    for name, value in body.items():
+        if not isinstance(name, str) or not name.strip():
+            invalid_items.append({name: value})
+            continue
+
+        if isinstance(value, str):
+            value = value.strip()
+
+        valid_items[name.strip()] = value
 
     if not valid_items and invalid_items:
         return {
@@ -74,20 +67,25 @@ def lambda_handler(event, context):
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
             },
-            "body": json.dumps({"error": "No valid config items", "invalid": invalid_items}),
+            "body": json.dumps(
+                {
+                    "error": "No valid config keys in body",
+                    "invalid": invalid_items,
+                }
+            ),
         }
 
     connection = None
     inserted = []
     updated = []
 
-
     try:
         connection = create_connection()
         with connection.cursor() as cursor:
-            # find existing names
-            names = [item["name"] for item in valid_items]
+            names = list(valid_items.keys())
             format_strings = ",".join(["%s"] * len(names))
+            
+            # find existing
             cursor.execute(
                 f"SELECT name FROM config WHERE name IN ({format_strings})",
                 names,
@@ -95,20 +93,19 @@ def lambda_handler(event, context):
             existing_rows = cursor.fetchall()
             existing_names = {row["name"] for row in existing_rows}
 
-            to_update = [item for item in valid_items if item["name"] in existing_names]
-            to_insert = [item for item in valid_items if item["name"] not in existing_names]
-
-            # updates
+            # update existing
             update_sql = "UPDATE config SET value = %s WHERE name = %s"
-            for item in to_update:
-                cursor.execute(update_sql, (item["value"], item["name"]))
-                updated.append(item["name"])
+            for name in names:
+                if name in existing_names:
+                    cursor.execute(update_sql, (valid_items[name], name))
+                    updated.append(name)
 
-            # inserts
+            # insert new
             insert_sql = "INSERT INTO config (name, value) VALUES (%s, %s)"
-            for item in to_insert:
-                cursor.execute(insert_sql, (item["name"], item["value"]))
-                inserted.append(item["name"])
+            for name in names:
+                if name not in existing_names:
+                    cursor.execute(insert_sql, (name, valid_items[name]))
+                    inserted.append(name)
 
             connection.commit()
 
@@ -139,7 +136,6 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({"error": f"Failed to process configs: {str(e)}"}),
         }
-
     finally:
         if connection:
             connection.close()
