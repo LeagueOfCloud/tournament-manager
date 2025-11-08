@@ -469,6 +469,25 @@ Resources:
           DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
           RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
 
+  ###########################################################
+  # ACCOUNT CHAMPION MASTERY LAMBDAS                        #
+  ###########################################################
+
+  FetchPlayerChampionMasteryLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/champion-mastery/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Runtime: python3.13
+      Environment:
+        Variables:
+          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
+          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
+          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
+          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
+          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
+          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
 
   ###########################################################
   # CONFIG LAMBDAS                                          #
