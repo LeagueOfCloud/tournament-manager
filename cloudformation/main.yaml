@@ -474,10 +474,10 @@ Resources:
   # CONFIG LAMBDAS                                          #
   ###########################################################
 
-  CreateConfigLambda:
+  CreateOrUpdateConfigLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/config/create/src/
+      CodeUri: lambdas/config/create-update/src/
       Handler: app.lambda_handler
       Timeout: 30
       Runtime: python3.13
@@ -486,7 +486,7 @@ Resources:
           Type: Api
           Properties:
             Path: /config
-            Method: POST
+            Method: PUT
             RestApiId: !Ref Api
       Environment:
         Variables:
@@ -510,28 +510,6 @@ Resources:
               Path: /config
               Method: DELETE
               RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-
-  UpdateConfigLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: lambdas/config/update/src/
-      Handler: app.lambda_handler
-      Timeout: 30
-      Runtime: python3.13
-      Events:
-        ApiEndpoint:
-          Type: Api
-          Properties:
-            Path: /config
-            Method: PATCH
-            RestApiId: !Ref Api
       Environment:
         Variables:
           DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
