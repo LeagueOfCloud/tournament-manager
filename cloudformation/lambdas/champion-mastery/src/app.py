@@ -21,7 +21,7 @@ GET_PLAYER_UUIDS_SQL = """
 INSERT_OR_UPDATE_MASTERY_SQL = """
     INSERT INTO account_champion_mastery (
         account_puuid,
-        mastery_json,
+        mastery_json
     ) VALUES (%s, %s)
     ON DUPLICATE KEY UPDATE
         mastery_json = VALUES(mastery_json);
