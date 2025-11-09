@@ -19,7 +19,7 @@ Resources:
       StageName: prod
       Cors:
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        AllowMethods: "'GET,OPTIONS,DELETE,POST,PATCH'"
+        AllowMethods: "'GET,OPTIONS,DELETE,POST,PATCH,PUT'"
         AllowOrigin: "'*'"
         AllowCredentials: false
       Auth:
