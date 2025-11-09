@@ -22,8 +22,7 @@ PATH_PERMISSIONS = {
     "POST /match-history": "admin",
     "PUT /match-history": "admin",
     "GET /config": "admin",
-    "PATCH /config": "admin",
-    "POST /config": "admin",
+    "PUT /config": "admin",
     "DELETE /config": "admin",
 }
 
