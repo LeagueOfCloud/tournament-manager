@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  FetchChampionMasteryLambdaArn:
+    Type: String
+  FetchMatchIDsLambdaArn:
+    Type: String
+  FetchMatchDataLambdaArn:
+    Type: String
+  FetchPlayerStatsLambdaArn:
+    Type: String
+
+Resources:
+  MasterSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: MasterSchedulerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: 
+                  - !Ref FetchChampionMasteryLambdaArn
+                  - !Ref FetchMatchIDsLambdaArn
+                  - !Ref FetchMatchDataLambdaArn
+                  - !Ref FetchPlayerStatsLambdaArn
+
+  FetchChampionMasteryScheduler:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: FetchChampionMasterySchedule
+      ScheduleExpression: rate(10 minutes)
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      Target:
+        Arn: !Ref FetchChampionMasteryLambdaArn
+        RoleArn: !GetAtt MasterSchedulerRole.Arn
+
+  FetchMatchIDsScheduler:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: FetchMatchIDsSchedule
+      ScheduleExpression: rate(20 minutes)
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      Target:
+        Arn: !Ref FetchMatchIDsLambdaArn
+        RoleArn: !GetAtt MasterSchedulerRole.Arn
+
+  FetchMatchDataScheduler:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: FetchMatchDataSchedule
+      ScheduleExpression: rate(5 minutes)
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      Target:
+        Arn: !Ref FetchMatchDataLambdaArn
+        RoleArn: !GetAtt MasterSchedulerRole.Arn
+
+  FetchPlayerStatsScheduler:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: FetchPlayerStatsSchedule
+      ScheduleExpression: rate(30 minutes)
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      Target:
+        Arn: !Ref FetchPlayerStatsLambdaArn
+        RoleArn: !GetAtt MasterSchedulerRole.Arn
+
