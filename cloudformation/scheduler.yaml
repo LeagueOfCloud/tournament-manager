@@ -40,7 +40,7 @@ Resources:
       Name: FetchChampionMasterySchedule
       ScheduleExpression: rate(10 minutes)
       FlexibleTimeWindow:
-        Mode: OFF
+        Mode: "OFF"
       Target:
         Arn: !Ref FetchChampionMasteryLambdaArn
         RoleArn: !GetAtt MasterSchedulerRole.Arn
@@ -51,7 +51,7 @@ Resources:
       Name: FetchMatchIDsSchedule
       ScheduleExpression: rate(20 minutes)
       FlexibleTimeWindow:
-        Mode: OFF
+        Mode: "OFF"
       Target:
         Arn: !Ref FetchMatchIDsLambdaArn
         RoleArn: !GetAtt MasterSchedulerRole.Arn
@@ -62,7 +62,7 @@ Resources:
       Name: FetchMatchDataSchedule
       ScheduleExpression: rate(5 minutes)
       FlexibleTimeWindow:
-        Mode: OFF
+        Mode: "OFF"
       Target:
         Arn: !Ref FetchMatchDataLambdaArn
         RoleArn: !GetAtt MasterSchedulerRole.Arn
@@ -73,7 +73,7 @@ Resources:
       Name: FetchPlayerStatsSchedule
       ScheduleExpression: rate(30 minutes)
       FlexibleTimeWindow:
-        Mode: OFF
+        Mode: "OFF"
       Target:
         Arn: !Ref FetchPlayerStatsLambdaArn
         RoleArn: !GetAtt MasterSchedulerRole.Arn
