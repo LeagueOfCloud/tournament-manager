@@ -8,7 +8,7 @@ region = "eu-west-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
 parameter_overrides = [
-    "DbSecretArn=arn:aws:secretsmanager:eu-west-1:327362716042:secret:tournament/db-yLBweX",
+    "SecretArn=arn:aws:secretsmanager:eu-west-1:327362716042:secret:tournament-manager-t46p79",
     "S3AssetsBucket=lockout-tournament-assets"
 ]
 image_repositories = []

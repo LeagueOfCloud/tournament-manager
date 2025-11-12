@@ -2,16 +2,29 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-  DbSecretArn:
+  SecretArn:
     Type: String
   S3AssetsBucket:
     Type: String
 
+Globals:
+  Function:
+    Runtime: python3.13
+    Environment:
+      Variables:
+        DB_HOST: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:host}}"
+        DB_PORT: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:port}}"
+        DB_USER: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:user}}"
+        DB_PASSWORD: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:password}}"
+        DB_NAME: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:name}}"
+        RIOT_API_KEY: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:riot_api_key}}"
+        BUCKET_NAME: !Ref S3AssetsBucket
+
 Resources:
   ###########################################################
-  # SCHEDULES                                               #
+  # NESTED STACKS                                           #
   ###########################################################
-  
+
   Schedules:
     Type: AWS::Serverless::Application
     Properties:
@@ -81,14 +94,6 @@ Resources:
       CodeUri: lambdas/api-authenticator/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
 
   ###########################################################
   # PLAYER LAMBDAS                                          #
@@ -101,7 +106,6 @@ Resources:
       CodeUri: lambdas/players/create/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
           Type: Api
@@ -109,14 +113,6 @@ Resources:
             Path: /players
             Method: POST
             RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          BUCKET_NAME: !Ref S3AssetsBucket
   
   DeletePlayerLambda:
     Type: AWS::Serverless::Function
@@ -124,7 +120,6 @@ Resources:
       CodeUri: lambdas/players/delete/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
           Type: Api
@@ -132,13 +127,6 @@ Resources:
             Path: /players
             Method: DELETE
             RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
   
   UpdatePlayerLambda:
     Type: AWS::Serverless::Function
@@ -147,7 +135,6 @@ Resources:
       CodeUri: lambdas/players/update/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
           Type: Api
@@ -155,14 +142,6 @@ Resources:
             Path: /players
             Method: PATCH
             RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          BUCKET_NAME: !Ref S3AssetsBucket
 
   ###########################################################
   # RESOURCE GET LAMBDA                                     #
@@ -174,7 +153,6 @@ Resources:
       CodeUri: lambdas/resource-get/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpointPlayers:
           Type: Api
@@ -230,13 +208,6 @@ Resources:
             Path: /config
             Method: GET
             RestApiId: !Ref Api
-      Environment:
-        Variables: 
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
 
   ###########################################################
   # RIOT ACCOUNT LAMBDAS                                    #
@@ -248,7 +219,6 @@ Resources:
       CodeUri: lambdas/riot-accounts/create/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
           Type: Api
@@ -256,14 +226,6 @@ Resources:
             Path: /riot-accounts
             Method: POST
             RestApiId: !Ref Api
-      Environment:
-        Variables: 
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
 
   DeleteRiotAccountLambda:
     Type: AWS::Serverless::Function
@@ -271,7 +233,6 @@ Resources:
       CodeUri: lambdas/riot-accounts/delete/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
             Type: Api
@@ -279,13 +240,6 @@ Resources:
               Path: /riot-accounts
               Method: DELETE
               RestApiId: !Ref Api
-      Environment:
-        Variables: 
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
   
   UpdateRiotAccountLambda:
     Type: AWS::Serverless::Function
@@ -293,7 +247,6 @@ Resources:
       CodeUri: lambdas/riot-accounts/update/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
             Type: Api
@@ -301,13 +254,6 @@ Resources:
               Path: /riot-accounts
               Method: PATCH
               RestApiId: !Ref Api
-      Environment:
-        Variables: 
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
 
   GetAccountsFromPlayerIdLambda:
     Type: AWS::Serverless::Function
@@ -315,7 +261,6 @@ Resources:
       CodeUri: lambdas/riot-accounts/player-get/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
           Type: Api
@@ -323,13 +268,6 @@ Resources:
             Path: /riot-accounts/player/{player_id}
             Method: GET
             RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
 
   ###########################################################
   # TEAM LAMBDAS                                            #
@@ -342,7 +280,6 @@ Resources:
       CodeUri: lambdas/teams/create/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
             Type: Api
@@ -350,14 +287,6 @@ Resources:
               Path: /teams
               Method: POST
               RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          BUCKET_NAME: !Ref S3AssetsBucket
   
   DeleteTeamLambda:
     Type: AWS::Serverless::Function
@@ -365,7 +294,6 @@ Resources:
       CodeUri: lambdas/teams/delete/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
             Type: Api
@@ -373,14 +301,6 @@ Resources:
               Path: /teams
               Method: DELETE
               RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          BUCKET_NAME: !Ref S3AssetsBucket
   
   UpdateTeamLambda:
     Type: AWS::Serverless::Function
@@ -389,7 +309,6 @@ Resources:
       CodeUri: lambdas/teams/update/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
           Type: Api
@@ -397,14 +316,6 @@ Resources:
             Path: /teams
             Method: PATCH
             RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          BUCKET_NAME: !Ref S3AssetsBucket
 
   ###########################################################
   # MATCH HISTORY LAMBDAS                                   #
@@ -416,7 +327,6 @@ Resources:
       CodeUri: lambdas/match-history/create/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
             Type: Api
@@ -424,14 +334,6 @@ Resources:
               Path: /match-history
               Method: POST
               RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
   
   UpdateMatchHistoryLambda:
     Type: AWS::Serverless::Function
@@ -439,7 +341,6 @@ Resources:
       CodeUri: lambdas/match-history/update/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
             Type: Api
@@ -447,14 +348,6 @@ Resources:
               Path: /match-history
               Method: PUT
               RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
 
   ###########################################################
   # LEAGUE STATS LAMBDAS                                    #
@@ -466,7 +359,6 @@ Resources:
       CodeUri: lambdas/player-stats/create/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
             Type: Api
@@ -474,14 +366,6 @@ Resources:
               Path: /player-stats
               Method: POST
               RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
 
   ###########################################################
   # ACCOUNT CHAMPION MASTERY LAMBDAS                        #
@@ -493,15 +377,6 @@ Resources:
       CodeUri: lambdas/champion-mastery/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
-          RIOT_API_KEY: "RGAPI-966cb6c9-0795-48b7-a4b1-72cddbf82fa8"
 
   ###########################################################
   # CONFIG LAMBDAS                                          #
@@ -513,7 +388,6 @@ Resources:
       CodeUri: lambdas/config/create-update/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
           Type: Api
@@ -521,13 +395,6 @@ Resources:
             Path: /config
             Method: PUT
             RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
   
   DeleteConfigLambda:
     Type: AWS::Serverless::Function
@@ -535,7 +402,6 @@ Resources:
       CodeUri: lambdas/config/delete/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Runtime: python3.13
       Events:
         ApiEndpoint:
             Type: Api
@@ -543,10 +409,3 @@ Resources:
               Path: /config
               Method: DELETE
               RestApiId: !Ref Api
-      Environment:
-        Variables:
-          DB_HOST: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:host}}"
-          DB_PORT: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:port}}"
-          DB_USER: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:user}}"
-          DB_PASSWORD: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:password}}"
-          DB_NAME: !Sub "{{resolve:secretsmanager:${DbSecretArn}:SecretString:name}}"
