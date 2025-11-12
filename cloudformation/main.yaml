@@ -9,6 +9,20 @@ Parameters:
 
 Resources:
   ###########################################################
+  # SCHEDULES                                               #
+  ###########################################################
+  
+  Schedules:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./scheduler.yaml
+      Parameters:
+        FetchChampionMasteryLambdaArn: !GetAtt FetchPlayerChampionMasteryLambda.Arn
+        FetchMatchIDsLambdaArn: !GetAtt FetchMatchHistoryLambda.Arn
+        FetchMatchDataLambdaArn: !GetAtt UpdateMatchHistoryLambda.Arn
+        FetchPlayerStatsLambdaArn: !GetAtt FetchPlayerStatsLambda.Arn
+
+  ###########################################################
   # REST-API DEFINITION                                     #
   ###########################################################
 
