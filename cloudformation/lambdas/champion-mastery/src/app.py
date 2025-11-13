@@ -9,11 +9,10 @@ from datetime import datetime
 RIOT_API_KEY = os.environ["RIOT_API_KEY"]
 RIOT_PLATFORM = "euw1"
 
-# change interval? change limit?
 GET_PLAYER_UUIDS_SQL = """
     SELECT account_puuid FROM riot_accounts
     WHERE last_champion_mastery_fetch IS NULL 
-        OR last_champion_mastery_fetch < NOW() - INTERVAL 1 WEEK
+        OR last_champion_mastery_fetch < NOW() - INTERVAL 1 DAY
     ORDER BY last_champion_mastery_fetch IS NOT NULL, last_champion_mastery_fetch DESC
     LIMIT 5;
 """

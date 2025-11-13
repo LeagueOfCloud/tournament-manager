@@ -15,7 +15,7 @@ GET_PLAYER_UUIDS_SQL = """
     SELECT account_puuid
     FROM riot_accounts
     WHERE last_player_stats_fetch IS NULL
-        OR last_player_stats_fetch < NOW() - INTERVAL 1 WEEK
+        OR last_player_stats_fetch < NOW() - INTERVAL 1 DAY
     ORDER BY last_player_stats_fetch IS NOT NULL, last_player_stats_fetch DESC
     LIMIT 5;
 """
