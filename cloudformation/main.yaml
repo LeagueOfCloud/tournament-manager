@@ -32,7 +32,7 @@ Resources:
       Parameters:
         FetchChampionMasteryLambdaArn: !GetAtt FetchPlayerChampionMasteryLambda.Arn
         FetchMatchIDsLambdaArn: !GetAtt FetchMatchHistoryLambda.Arn
-        FetchMatchDataLambdaArn: !GetAtt UpdateMatchHistoryLambda.Arn
+        FetchMatchDataLambdaArn: !GetAtt FetchMatchDataLambda.Arn
         FetchPlayerStatsLambdaArn: !GetAtt FetchPlayerStatsLambda.Arn
 
   ###########################################################
@@ -324,30 +324,16 @@ Resources:
   FetchMatchHistoryLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/match-history/create/src/
+      CodeUri: lambdas/matches/get-match-ids/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Events:
-        ApiEndpoint:
-            Type: Api
-            Properties:
-              Path: /match-history
-              Method: POST
-              RestApiId: !Ref Api
   
-  UpdateMatchHistoryLambda:
+  FetchMatchDataLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/match-history/update/src/
+      CodeUri: lambdas/matches/get-match-data/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Events:
-        ApiEndpoint:
-            Type: Api
-            Properties:
-              Path: /match-history
-              Method: PUT
-              RestApiId: !Ref Api
 
   ###########################################################
   # LEAGUE STATS LAMBDAS                                    #
@@ -356,16 +342,9 @@ Resources:
   FetchPlayerStatsLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/player-stats/create/src/
+      CodeUri: lambdas/player-stats/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Events:
-        ApiEndpoint:
-            Type: Api
-            Properties:
-              Path: /player-stats
-              Method: POST
-              RestApiId: !Ref Api
 
   ###########################################################
   # ACCOUNT CHAMPION MASTERY LAMBDAS                        #
