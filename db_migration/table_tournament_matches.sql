@@ -7,3 +7,6 @@ CREATE TABLE IF NOT EXISTS tournament_db.tournament_matches (
     winner_team_id INT DEFAULT NULL,
     tournament_match_id VARCHAR(100) NOT NULL UNIQUE
 );
+
+ALTER TABLE tournament_db.tournament_matches
+MODIFY tournament_match_id VARCHAR(100) DEFAULT NULL UNIQUE;
