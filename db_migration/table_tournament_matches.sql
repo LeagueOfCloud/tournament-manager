@@ -5,5 +5,13 @@ CREATE TABLE IF NOT EXISTS tournament_db.tournament_matches (
     start_date DATETIME NOT NULL,
     end_date DATETIME DEFAULT NULL,
     winner_team_id INT DEFAULT NULL,
-    tournament_match_id VARCHAR(100) NOT NULL UNIQUE
+    tournament_match_id VARCHAR(100) DEFAULT NULL UNIQUE,
+    CONSTRAINT fk_tournament_matches_team_1_id
+        FOREIGN KEY (team_1_id)
+        REFERENCES tournament_db.teams (id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_tournament_matches_team_2_id
+        FOREIGN KEY (team_2_id)
+        REFERENCES tournament_db.teams (id)
+        ON DELETE CASCADE
 );
