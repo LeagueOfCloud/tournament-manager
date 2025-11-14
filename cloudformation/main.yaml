@@ -388,3 +388,21 @@ Resources:
               Path: /config
               Method: DELETE
               RestApiId: !Ref Api
+
+  ###########################################################
+  # TOURNAMENT MATCH LAMBDAS                                #
+  ###########################################################
+
+  CreateTournamentMatchLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/tournament-matches/create/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+
+  UpdateTournamentMatchLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/tournament-matches/update/src/
+      Handler: app.lambda_handler
+      Timeout: 30
