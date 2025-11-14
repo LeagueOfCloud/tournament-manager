@@ -15,3 +15,5 @@ CREATE TABLE IF NOT EXISTS tournament_db.tournament_matches (
         REFERENCES tournament_db.teams (id)
         ON DELETE CASCADE
 );
+
+ALTER TABLE tournament_db.tournament_matches ADD CONSTRAINT fk_tournament_matches_winner_team_id FOREIGN KEY (winner_team_id) REFERENCES tournament_db.tournament_matches (id) ON DELETE CASCADE;
