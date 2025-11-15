@@ -13,7 +13,7 @@ GET_MATCH_IDS_SQL = """
     SELECT match_id, match_data
     FROM match_history
     WHERE match_data IS NOT NULL AND was_processed = 'false'
-    LIMIT 1;
+    LIMIT 5;
 """
 
 FETCH_KNOWN_PUUIDS_SQL_TMPL = """
@@ -29,7 +29,7 @@ MARK_MATCH_PROCESSED_SQL = """
 """
 
 INSERT_PROCESSED_MATCH_DATA_SQL = """
-    INSERT INTO processed_match_data (match_id, account_id, account_name, champion_name, teamPosition, goldEarned, totalDamageDealtToChampions, totalMinionsKilled, kills, deaths, assists, vision_score, win, queueId, gameDuration)
+    INSERT INTO processed_match_data (match_id, account_puuid, account_name, champion_name, teamPosition, goldEarned, totalDamageDealtToChampions, totalMinionsKilled, kills, deaths, assists, vision_score, win, queueId, gameDuration)
     VALUES
         (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
     
@@ -92,6 +92,8 @@ def extract_rows_for_known_puuids(match_id: str, payload: Dict[str, Any], known_
     info = (payload or {}).get("info", {})
     queue_id = info.get("queueId")
     game_duration = info.get("gameDuration")
+    if game_duration < 60*10:
+        return []  # skip remade games
     participants = info.get("participants", []) or []
 
     rows: List[Tuple] = []
@@ -100,22 +102,26 @@ def extract_rows_for_known_puuids(match_id: str, payload: Dict[str, Any], known_
         if puuid not in known_puuids:
             continue
 
-        account_name = p.get("summonerName")
+        account_aux = p.get("riotIdGameName")
+        account_tag = p.get("riotIdTagline")
+        account_name = f"{account_aux}#{account_tag}"
         champion_name = p.get("championName")
         team_position = p.get("teamPosition")
 
         gold = p.get("goldEarned")
         dmg = p.get("totalDamageDealtToChampions")
         cs = p.get("totalMinionsKilled")
+        neutral_cs = p.get("neutralMinionsKilled")
+        total_cs = cs + neutral_cs
         kills = p.get("kills")
         deaths = p.get("deaths")
         assists = p.get("assists")
         vision_score = p.get("visionScore")
-        win = p.get("win")
+        win = str(p.get("win"))
 
         rows.append((
             match_id, puuid, account_name, champion_name, team_position,
-            gold, dmg, cs, kills, deaths, assists, vision_score, win,
+            gold, dmg, total_cs, kills, deaths, assists, vision_score, win,
             queue_id, game_duration
         ))
 
@@ -175,6 +181,7 @@ def lambda_handler(event, context):
                 "Content-Type": "application/json", 
                 "Access-Control-Allow-Origin": "*"
             },
+            "body": json.dumps({"message": "Error processing matches.", "error": str(e)})
         }
 
     return {
