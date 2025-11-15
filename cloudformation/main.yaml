@@ -334,6 +334,13 @@ Resources:
       CodeUri: lambdas/matches/get-match-data/src/
       Handler: app.lambda_handler
       Timeout: 30
+  
+  ProcessMatchDataLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/matches/process-match-data/src/
+      Handler: app.lambda_handler
+      Timeout: 60
 
   ###########################################################
   # LEAGUE STATS LAMBDAS                                    #
