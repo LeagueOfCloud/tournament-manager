@@ -406,3 +406,10 @@ Resources:
       CodeUri: lambdas/tournament-matches/update/src/
       Handler: app.lambda_handler
       Timeout: 30
+
+  DeleteTournamentMatchLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/tournament-matches/delete/src/
+      Handler: app.lambda_handler
+      Timeout: 30

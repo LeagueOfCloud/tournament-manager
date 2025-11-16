@@ -6,7 +6,6 @@ DELETE_TOURNAMENT_MATCH_SQL = """
     DELETE FROM tournament_matches WHERE id = %s
 """
 
-
 def validate_match_id(id) -> bool:
     try:
         int(id.get("id", ""))
@@ -14,7 +13,6 @@ def validate_match_id(id) -> bool:
         return False
 
     return True
-
 
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
@@ -25,7 +23,6 @@ def create_connection() -> pymysql.Connection:
         database=os.environ["DB_NAME"],
         cursorclass=pymysql.cursors.DictCursor,
     )
-
 
 def lambda_handler(event, context):
     request_id = context.aws_request_id
@@ -41,7 +38,7 @@ def lambda_handler(event, context):
             },
         }
 
-    match_id = id.get("id")
+    match_id = int(id.get("id"))
     connection = None
 
     try:
