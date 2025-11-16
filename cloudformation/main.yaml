@@ -399,3 +399,49 @@ Resources:
               Path: /config
               Method: DELETE
               RestApiId: !Ref Api
+
+  ###########################################################
+  # TOURNAMENT MATCH LAMBDAS                                #
+  ###########################################################
+
+  CreateTournamentMatchLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/tournament-matches/create/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /tournament-matches
+              Method: POST
+              RestApiId: !Ref Api
+
+  UpdateTournamentMatchLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/tournament-matches/update/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /tournament-matches
+              Method: PATCH
+              RestApiId: !Ref Api
+
+  DeleteTournamentMatchLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/tournament-matches/delete/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /tournament-matches
+              Method: DELETE
+              RestApiId: !Ref Api
