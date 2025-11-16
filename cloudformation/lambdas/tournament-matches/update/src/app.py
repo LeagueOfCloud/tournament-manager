@@ -18,9 +18,11 @@ def create_connection() -> pymysql.Connection:
 def validate_match_data(match_data) -> bool:
     try:
         int(match_data.get("id", ""))
-        int(match_data.get("team_1_id", ""))
-        int(match_data.get("team_2_id", ""))
+        team_1_id = int(match_data.get("team_1_id", ""))
+        team_2_id = int(match_data.get("team_2_id", ""))
         int(match_data.get("date", ""))
+        if team_1_id == team_2_id:
+            return False
     except (ValueError, TypeError):
         return False
     
@@ -45,6 +47,17 @@ def lambda_handler(event, context):
     team_1_id = int(match_data.get("team_1_id"))
     team_2_id = int(match_data.get("team_2_id"))
     start_date = int(match_data.get("date"))
+    start_date_date = datetime.fromtimestamp(start_date/1000)
+
+    if start_date_date < datetime.now():
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps("Start date can not be in the past")
+        }
 
     connection = None
     try:
@@ -53,7 +66,7 @@ def lambda_handler(event, context):
         with connection.cursor() as cursor:
             rows_affected = cursor.execute(
                 "UPDATE tournament_matches SET team_1_id=%s, team_2_id=%s, start_date=%s WHERE id=%s",
-                (team_1_id, team_2_id, datetime.fromtimestamp(start_date/1000), id)
+                (team_1_id, team_2_id, start_date_date, id)
             )
             connection.commit()
 
@@ -88,5 +101,3 @@ def lambda_handler(event, context):
     finally:
         if connection:
             connection.close()
-
-

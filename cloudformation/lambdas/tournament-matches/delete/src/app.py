@@ -6,9 +6,9 @@ DELETE_TOURNAMENT_MATCH_SQL = """
     DELETE FROM tournament_matches WHERE id = %s
 """
 
-def validate_match_id(id) -> bool:
+def validate_match_data(match_data) -> bool:
     try:
-        int(id.get("id", ""))
+        int(match_data.get("id", ""))
     except (ValueError, TypeError):
         return False
 
@@ -26,9 +26,9 @@ def create_connection() -> pymysql.Connection:
 
 def lambda_handler(event, context):
     request_id = context.aws_request_id
-    match_id = json.loads(event["body"])
+    match_data = json.loads(event["body"])
 
-    if not validate_match_id(id):
+    if not validate_match_data(match_data):
         
         return {
             "statusCode": 400,
@@ -38,7 +38,7 @@ def lambda_handler(event, context):
             },
         }
 
-    match_id = int(id.get("id"))
+    match_id = int(match_data.get("id"))
     connection = None
 
     try:

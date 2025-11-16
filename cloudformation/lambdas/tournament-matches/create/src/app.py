@@ -12,9 +12,11 @@ INSERT_TOURNAMENT_MATCH_SQL = """
 
 def validate_match_data(match_data) -> bool:
     try:
-        int(match_data.get("team_1_id", ""))
-        int(match_data.get("team_2_id", ""))
+        team_1_id = int(match_data.get("team_1_id", ""))
+        team_2_id = int(match_data.get("team_2_id", ""))
         int(match_data.get("date", ""))
+        if team_1_id == team_2_id:
+            return False
     except (ValueError, TypeError):
         return False
     
@@ -48,7 +50,18 @@ def lambda_handler(event, context):
     team_1_id = int(match_data.get("team_1_id"))
     team_2_id = int(match_data.get("team_2_id"))
     start_date = int(match_data.get("date"))
+    start_date_date = datetime.fromtimestamp(start_date/1000)
     
+    if start_date_date < datetime.now():
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps("Start date can not be in the past")
+        }
+
     connection = None
 
     try:
@@ -57,7 +70,7 @@ def lambda_handler(event, context):
         with connection.cursor() as cursor:
             cursor.execute(
                 INSERT_TOURNAMENT_MATCH_SQL, 
-                (team_1_id, team_2_id, datetime.fromtimestamp(start_date/1000))
+                (team_1_id, team_2_id, start_date_date)
             )
             connection.commit()
             insert_id = cursor.lastrowid
