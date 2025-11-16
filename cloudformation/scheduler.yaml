@@ -9,6 +9,8 @@ Parameters:
     Type: String
   FetchPlayerStatsLambdaArn:
     Type: String
+  ProcessMatchDataLambdaArn:
+    Type: String
 
 Resources:
   MasterSchedulerRole:
@@ -33,6 +35,7 @@ Resources:
                   - !Ref FetchMatchIDsLambdaArn
                   - !Ref FetchMatchDataLambdaArn
                   - !Ref FetchPlayerStatsLambdaArn
+                  - !Ref ProcessMatchDataLambdaArn
 
   FetchChampionMasteryScheduler:
     Type: AWS::Scheduler::Schedule
@@ -65,6 +68,17 @@ Resources:
         Mode: "OFF"
       Target:
         Arn: !Ref FetchMatchDataLambdaArn
+        RoleArn: !GetAtt MasterSchedulerRole.Arn
+    
+  ProcessMatchDataScheduler:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: ProcessMatchDataSchedule
+      ScheduleExpression: rate(10 minutes)
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      Target:
+        Arn: !Ref ProcessMatchDataLambdaArn
         RoleArn: !GetAtt MasterSchedulerRole.Arn
 
   FetchPlayerStatsScheduler:

@@ -2,6 +2,8 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
+  SecretVersion:
+    Type: String
   SecretArn:
     Type: String
   S3AssetsBucket:
@@ -12,6 +14,7 @@ Globals:
     Runtime: python3.13
     Environment:
       Variables:
+        SECRET_VERSION: !Ref SecretVersion
         DB_HOST: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:host}}"
         DB_PORT: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:port}}"
         DB_USER: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:user}}"
@@ -34,6 +37,7 @@ Resources:
         FetchMatchIDsLambdaArn: !GetAtt FetchMatchHistoryLambda.Arn
         FetchMatchDataLambdaArn: !GetAtt FetchMatchDataLambda.Arn
         FetchPlayerStatsLambdaArn: !GetAtt FetchPlayerStatsLambda.Arn
+        ProcessMatchDataLambdaArn: !GetAtt ProcessMatchDataLambda.Arn
 
   ###########################################################
   # REST-API DEFINITION                                     #
