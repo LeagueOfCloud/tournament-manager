@@ -217,6 +217,8 @@ Resources:
           Properties:
             Path: /settings
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
 
   ###########################################################
