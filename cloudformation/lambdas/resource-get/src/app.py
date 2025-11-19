@@ -83,6 +83,14 @@ def lambda_handler(event, context):
 
         print(f"{request_id} Incoming path: { _extract_path(event) } | resource={resource} id={record_id}")
 
+        if resource == "settings":
+            list_sql = "SELECT * FROM config"
+            cur.execute(list_sql)
+            rows = cur.fetchall()
+            formatted_rows = {row["name"]: row["value"] for row in rows if row["name"] in ["maintenance", "pickem_unlocked", "dd_unlocked", "tournament_name"]}
+
+            return _response(200, formatted_rows)
+
         # Validate resource
         if resource not in ROUTES:
             print(f"{request_id} Unknown resource: {resource}")

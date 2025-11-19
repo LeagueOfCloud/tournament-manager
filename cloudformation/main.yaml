@@ -212,6 +212,12 @@ Resources:
             Path: /config
             Method: GET
             RestApiId: !Ref Api
+        ApiEndpointSettings:
+          Type: Api
+          Properties:
+            Path: /settings
+            Method: GET
+            RestApiId: !Ref Api
 
   ###########################################################
   # RIOT ACCOUNT LAMBDAS                                    #
