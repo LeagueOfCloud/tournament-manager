@@ -23,15 +23,16 @@ SELECT_USER_SQL = """
 SELECT_CONFIG_SQL = """
     SELECT value FROM config where name = (%s)
 """
+
 SELECT_PLAYER_SQL = """
     SELECT id FROM players where id = (%s)
 """
+
 SELECT_TEAM_SQL = """
     SELECT id FROM team where id = (%s)
 """
 
 connection = None
-
 
 def select_pickems(id):
     with connection.cursor() as cursor:

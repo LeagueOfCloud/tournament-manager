@@ -453,3 +453,21 @@ Resources:
               Path: /tournament-matches
               Method: DELETE
               RestApiId: !Ref Api
+
+  ###########################################################
+  # PICKEMS LAMBDAS                                         #
+  ###########################################################
+
+    PutPickemsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/pickems/put/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /pickems
+              Method: PUT
+              RestApiId: !Ref Api
