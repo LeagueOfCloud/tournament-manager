@@ -36,7 +36,7 @@ connection = None
 def select_pickems(id):
     with connection.cursor() as cursor:
         cursor.execute(SELECT_PICKEMS_SQL,
-                       (id))
+                       id)
     row = cursor.fetchone()
     return row
 
@@ -53,7 +53,7 @@ def update_pickens(id,value):
     with connection.cursor() as cursor:
         cursor.execute(
              UPDATE_PICKEMS_SQL,
-             (id,value))
+             (value,id))
         connection.commit()
     return cursor.lastrowid 
              
@@ -82,24 +82,24 @@ def figure_out_pickems_type(id):
     config = cursor.fetchone()
     jsonconfig = json.loads(config)
     row = next((item for item in jsonconfig if item["id"] == id), None)
-    row["type"]
+    return row["type"]
 
 
 def valid_user(user_id) -> bool:
     with connection.cursor() as cursor:
         cursor.execute(SELECT_USER_SQL,
-                       (user_id))
+                       user_id)
     config = cursor.fetchone()
-    if(config.count == 0 ):
+    if(config is None):
         return False
-    if(config[0].type != "admin"):
+    if config["type"] != "admin":
         return False
     return True
 
 def validate_player(player_value):
     with connection.cursor() as cursor:
         cursor.execute(SELECT_PLAYER_SQL,
-                       (player_value))
+                       player_value)
     player = cursor.fetchone()
     if(player is None):
         return False
@@ -108,7 +108,7 @@ def validate_player(player_value):
 def validate_team(team_value):
     with connection.cursor() as cursor:
         cursor.execute(SELECT_TEAM_SQL,
-                       (team_value))
+                       team_value)
     team = cursor.fetchone()
     if(team is None):
         return False
@@ -126,7 +126,7 @@ def validate_champion(champion_value) -> bool:
 
 def lambda_handler(event, context):
     request_id = context.aws_request_id
-    account_data = json.loads(event["body"])
+    pickem_data = json.loads(event["body"])
     connection = create_connection()
 
     pickems_id = pickem_data.get("id")
@@ -160,8 +160,6 @@ def lambda_handler(event, context):
     match pickems_type:
         case "PLAYER":
             valid = validate_player(value)
-        case "COUNT":
-            return
         case "CHAMPION":
             valid = validate_champion(value)
         case "TEAM":
@@ -200,7 +198,7 @@ def lambda_handler(event, context):
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*"
             },
-            "body": json.dumps(f"Failed to create riot account, Error: {str(e)}"),
+            "body": json.dumps(f"Failed to create pickems, Error: {str(e)}"),
         }
 
     finally:
