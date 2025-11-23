@@ -473,15 +473,15 @@ Resources:
               RestApiId: !Ref Api
 
   GetPickemsLambda:
-  Type: AWS::Serverless::Function
-  Properties:
-    CodeUri: lambdas/pickems/get/src/
-    Handler: app.lambda_handler
-    Timeout: 30
-    Events:
-      ApiEndpoint:
-        Type: Api
-        Properties:
-          Path: /pickems
-          Method: GET
-          RestApiId: !Ref Api
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/pickems/get/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /pickems/{id}
+            Method: GET
+            RestApiId: !Ref Api
