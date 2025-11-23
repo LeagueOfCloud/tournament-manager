@@ -3,14 +3,10 @@ import os
 import pymysql
 import requests
 
-INSERT_PICKEMS_SQL = """
+UPSERT_PICKEMS_SQL = """
     INSERT INTO pickems (id, pickem_id, user_id, value)
-    VALUES (%s, %s, %s, %s)
+    VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE value = VALUES(value)
 """
-
-UPDATE_PICKEMS_SQL = """
-    UPDATE pickems SET value = (%s) where id = (%s)
-""" 
 
 SELECT_PICKEMS_SQL = """
     SELECT * FROM pickems WHERE id =(%s)
@@ -41,22 +37,14 @@ def select_pickem(id):
     row = cursor.fetchone()
     return row
 
-def create_pickem(id, pickem_id, user_id, value):
+def upsert_pickem(id, pickem_id, user_id, value):
     with connection.cursor() as cursor:
         cursor.execute(
-            INSERT_PICKEMS_SQL, 
+            UPSERT_PICKEMS_SQL, 
             (id, pickem_id, user_id, value)
         )
         connection.commit()
-        return cursor.lastrowid 
-    
-def update_pickens(id,value):
-    with connection.cursor() as cursor:
-        cursor.execute(
-             UPDATE_PICKEMS_SQL,
-             (value,id))
-        connection.commit()
-    return cursor.lastrowid 
+        return cursor.lastrowid
              
 
 def create_connection() -> pymysql.Connection:
@@ -83,16 +71,8 @@ def figure_out_pickems_type(id: str):
         cursor.execute(SELECT_CONFIG_SQL,
                        ("pickem_categories"))
     config = cursor.fetchone()
-    row = None
-    jsonconfig = json.loads(config["value"])
-    for item in jsonconfig:
-       if item.get("id") == str(id):
-            row = item
-            break
-    if row is None:
-        return row
-    return row["type"]
-
+    row = next((i for i in json.loads(config["value"]) if i["id"] == id), None)
+    return row["type"] if row else None
 
 def is_admin_user(user_id) -> bool:
     with connection.cursor() as cursor:
@@ -147,7 +127,7 @@ def validate_champion(champion_value) -> bool:
     data = response.json()
     champions = data["data"] 
     
-    return any(champ["name"].lower() == champion_value.lower() for champ in champions.values())
+    return any(champ["id"].lower() == champion_value.lower() for champ in champions.values())
 
 def lambda_handler(event, context):
     global connection
@@ -215,20 +195,16 @@ def lambda_handler(event, context):
     }
 
     try:
-        current_pickem = select_pickem(f"{pickem_id}-{user_id}")
-        if(current_pickem is None):
-            if None in (pickem_id, user_id,):
-                return {
-                "statusCode": 400,
-                "headers": {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
-                },
-                "body": json.dumps(f"Invalid data please fix and try again."),
-            }
-            create_pickem(f"{pickem_id}-{user_id}", pickem_id, user_id, value)    
-        else:
-            update_pickens(f"{pickem_id}-{user_id}",value)
+        if None in (pickem_id, user_id,):
+            return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps(f"Invalid data please fix and try again."),
+        }
+        upsert_pickem(f"{pickem_id}-{user_id}", pickem_id, user_id, value)    
         return {
                 "statusCode": 200,
                 "headers": {
