@@ -87,7 +87,7 @@ def lambda_handler(event, context):
             conn = create_connection()
 
             with conn.cursor() as cur:
-                list_sql = "SELECT * FROM config"
+                list_sql = "SELECT * FROM config WHERE public = 1"
                 cur.execute(list_sql)
                 rows = cur.fetchall()
                 formatted_rows = {row["name"]: row["value"] for row in rows if row["name"] in ["maintenance", "pickem_unlocked", "dd_unlocked", "tournament_name"]}
