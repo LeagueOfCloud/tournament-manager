@@ -482,6 +482,6 @@ Resources:
       ApiEndpoint:
         Type: Api
         Properties:
-          Path: /pickems
-          Method: GET
+          Path: /pickems/{id}
+          Method: get
           RestApiId: !Ref Api
