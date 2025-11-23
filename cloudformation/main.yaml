@@ -458,7 +458,7 @@ Resources:
   # PICKEMS LAMBDAS                                         #
   ###########################################################
 
-    PutPickemsLambda:
+  PutPickemsLambda:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: lambdas/pickems/put/src/

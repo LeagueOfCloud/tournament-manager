@@ -4,7 +4,7 @@ import pymysql
 import requests
 
 INSERT_PICKEMS_SQL = """
-    INSERT INTO pickems (id, pickems_id, user_id, value)
+    INSERT INTO pickems (id, pickem_id, user_id, value)
     VALUES (%s, %s, %s, %s)
 """
 
@@ -17,7 +17,7 @@ SELECT_PICKEMS_SQL = """
 """
 
 SELECT_USER_SQL = """
-    SELECT id,type FROM profiles WHERE id = (%s)
+    SELECT id,type FROM profiles WHERE token = (%s)
 """
 
 SELECT_CONFIG_SQL = """
@@ -29,23 +29,23 @@ SELECT_PLAYER_SQL = """
 """
 
 SELECT_TEAM_SQL = """
-    SELECT id FROM team where id = (%s)
+    SELECT id FROM teams where id = (%s)
 """
 
 connection = None
 
-def select_pickems(id):
+def select_pickem(id):
     with connection.cursor() as cursor:
         cursor.execute(SELECT_PICKEMS_SQL,
                        id)
     row = cursor.fetchone()
     return row
 
-def create_pickems(id, pickems_id, user_id, value):
+def create_pickem(id, pickem_id, user_id, value):
     with connection.cursor() as cursor:
         cursor.execute(
             INSERT_PICKEMS_SQL, 
-            (id, pickems_id, user_id, value)
+            (id, pickem_id, user_id, value)
         )
         connection.commit()
         return cursor.lastrowid 
@@ -74,19 +74,27 @@ def pickems_unlocked() -> bool:
         cursor.execute(SELECT_CONFIG_SQL,
                        ("pickem_unlocked"))
     config = cursor.fetchone()
-    return config[0]
+    if config["value"] == "true":
+        return True
+    return False
 
-def figure_out_pickems_type(id):
+def figure_out_pickems_type(id: str):
     with connection.cursor() as cursor:
         cursor.execute(SELECT_CONFIG_SQL,
                        ("pickem_categories"))
     config = cursor.fetchone()
-    jsonconfig = json.loads(config)
-    row = next((item for item in jsonconfig if item["id"] == id), None)
+    row = None
+    jsonconfig = json.loads(config["value"])
+    for item in jsonconfig:
+       if item.get("id") == str(id):
+            row = item
+            break
+    if row is None:
+        return row
     return row["type"]
 
 
-def valid_user(user_id) -> bool:
+def is_admin_user(user_id) -> bool:
     with connection.cursor() as cursor:
         cursor.execute(SELECT_USER_SQL,
                        user_id)
@@ -96,6 +104,22 @@ def valid_user(user_id) -> bool:
     if config["type"] != "admin":
         return False
     return True
+
+def get_user_id(token):
+    with connection.cursor() as cursor:
+        cursor.execute(SELECT_USER_SQL,
+                       token)
+    user = cursor.fetchone()
+    if(user["id"] is None):
+       return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps(f"Invalid user Id"),
+        } 
+    return user["id"]
 
 def validate_player(player_value):
     with connection.cursor() as cursor:
@@ -126,26 +150,29 @@ def validate_champion(champion_value) -> bool:
     return any(champ["name"].lower() == champion_value.lower() for champ in champions.values())
 
 def lambda_handler(event, context):
+    global connection
     request_id = context.aws_request_id
     pickem_data = json.loads(event["body"])
     connection = create_connection()
 
-    pickems_id = pickem_data.get("id")
+    pickem_id = pickem_data.get("id")
     #stolen from nemi
-    user_id = event["headers"].get("Authorization") or event["headers"].get("authorization")
+    user_token = event["headers"].get("Authorization") or event["headers"].get("authorization")
     value = pickem_data.get("value")
 
 
-
-    if not pickems_unlocked() or not valid_user(user_id):     
-        return {
+    if pickems_unlocked() is False:
+       if is_admin_user(user_token) is False:
+            return {
             "statusCode": 403,
             "headers": {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*"
             },
+            "body": json.dumps(f"https://uploads.dailydot.com/2024/11/nuh-uh-beocord.gif?auto=compress&fm=gif"),
         }
-    if None in (pickems_id, value):
+        
+    if None in (pickem_id, value):
         return {
         "statusCode": 400,
         "headers": {
@@ -155,8 +182,8 @@ def lambda_handler(event, context):
         "body": json.dumps(f"Invalid data please fix and try again."),
     }
 
-    pickems_type = figure_out_pickems_type(pickems_id)
-
+    pickems_type = figure_out_pickems_type(pickem_id)
+    user_id = get_user_id(user_token)
     valid = True
     match pickems_type:
         case "PLAYER":
@@ -165,6 +192,17 @@ def lambda_handler(event, context):
             valid = validate_champion(value)
         case "TEAM":
             valid = validate_team(value)
+        case "COUNT":
+            pass
+        case _:
+            return {
+        "statusCode": 400,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
+        "body": json.dumps(f"Invalid pickems Id please fix and try again."),
+    }
 
     if(not valid):
         return {
@@ -177,9 +215,9 @@ def lambda_handler(event, context):
     }
 
     try:
-        current_pickem = select_pickems(pickems_id)
+        current_pickem = select_pickem(f"{pickem_id}-{user_id}")
         if(current_pickem is None):
-            if None in (pickems_id, user_id,):
+            if None in (pickem_id, user_id,):
                 return {
                 "statusCode": 400,
                 "headers": {
@@ -188,9 +226,17 @@ def lambda_handler(event, context):
                 },
                 "body": json.dumps(f"Invalid data please fix and try again."),
             }
-            create_pickems(f"{pickems_id}-{user_id}", pickems_id, user_id, value)    
+            create_pickem(f"{pickem_id}-{user_id}", pickem_id, user_id, value)    
         else:
-            update_pickens(f"{pickems_id}-{user_id}",value)
+            update_pickens(f"{pickem_id}-{user_id}",value)
+        return {
+                "statusCode": 200,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                },
+                "body": json.dumps(f"Created/Updated Pickem"),
+            }
     except Exception as e:
         
         return {
