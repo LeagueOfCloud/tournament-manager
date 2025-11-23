@@ -22,8 +22,8 @@ def lambda_handler(event, context):
     try:
         connection = create_connection()
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM pickems WHERE user_id = %s", (pickems_id,))
-            result = cursor.fetchone()
+            cursor.execute("SELECT * FROM pickems WHERE user_id = %s", pickems_id)
+            result = cursor.fetchall()
 
         if not result:
             return {
@@ -41,10 +41,7 @@ def lambda_handler(event, context):
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             },
-            'body': json.dumps({
-                "message": "Pickems retrieved successfully",
-                "data": result
-            })
+            'body': json.dumps(result)
         }
 
     except Exception as e:
