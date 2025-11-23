@@ -90,8 +90,7 @@ def lambda_handler(event, context):
                 list_sql = "SELECT * FROM config WHERE public = 1"
                 cur.execute(list_sql)
                 rows = cur.fetchall()
-                formatted_rows = {row["name"]: row["value"] for row in rows if row["name"] in ["maintenance", "pickem_unlocked", "dd_unlocked", "tournament_name"]}
-                return _response(200, formatted_rows)
+                return _response(200, rows)
 
         # Validate resource
         if resource not in ROUTES:
