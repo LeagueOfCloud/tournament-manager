@@ -471,7 +471,7 @@ Resources:
               Path: /pickems
               Method: PUT
               RestApiId: !Ref Api
-              
+
   GetPickemsLambda:
   Type: AWS::Serverless::Function
   Properties:
@@ -482,6 +482,6 @@ Resources:
       ApiEndpoint:
         Type: Api
         Properties:
-          Path: /pickems/{id}
+          Path: /pickems
           Method: GET
           RestApiId: !Ref Api

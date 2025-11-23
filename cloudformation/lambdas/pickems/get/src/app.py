@@ -1,7 +1,6 @@
 import json
 import os
 import pymysql
-from datetime import datetime
 
 
 def create_connection() -> pymysql.Connection:
