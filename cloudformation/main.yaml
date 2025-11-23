@@ -484,4 +484,6 @@ Resources:
           Properties:
             Path: /pickems/{id}
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
