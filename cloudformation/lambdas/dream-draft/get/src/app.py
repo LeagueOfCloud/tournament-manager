@@ -86,31 +86,26 @@ def lambda_handler(event, context):
 
         selection = [
             {
-                "slot": 1,
                 "player_id": row["selection_1_id"],
                 "name": row["selection_1_name"],
                 "cost": row["selection_1_cost"],
             },
             {
-                "slot": 2,
                 "player_id": row["selection_2_id"],
                 "name": row["selection_2_name"],
                 "cost": row["selection_2_cost"],
             },
             {
-                "slot": 3,
                 "player_id": row["selection_3_id"],
                 "name": row["selection_3_name"],
                 "cost": row["selection_3_cost"],
             },
             {
-                "slot": 4,
                 "player_id": row["selection_4_id"],
                 "name": row["selection_4_name"],
                 "cost": row["selection_4_cost"],
             },
             {
-                "slot": 5,
                 "player_id": row["selection_5_id"],
                 "name": row["selection_5_name"],
                 "cost": row["selection_5_cost"],
