@@ -487,3 +487,37 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
+
+  ###########################################################
+  # PICKEMS LAMBDAS                                         #
+  ###########################################################
+
+  CreateOrUpdateDreamDraftLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/dream-draft/create-update/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /dream-draft
+            Method: PUT
+            RestApiId: !Ref Api
+
+  GetDreamDraftLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/dream-draft/get/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /dream-draft/{profile_id}
+            Method: GET
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref Api
