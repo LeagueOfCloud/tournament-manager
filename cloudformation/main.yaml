@@ -439,20 +439,20 @@ Resources:
               Path: /tournament-matches
               Method: PATCH
               RestApiId: !Ref Api
-
-  DeleteTournamentMatchLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: lambdas/tournament-matches/delete/src/
-      Handler: app.lambda_handler
-      Timeout: 30
-      Events:
-        ApiEndpoint:
-            Type: Api
-            Properties:
-              Path: /tournament-matches
-              Method: DELETE
-              RestApiId: !Ref Api
+  
+  #DeleteTournamentMatchLambda:
+  #  Type: AWS::Serverless::Function
+  #  Properties:
+  #    CodeUri: lambdas/tournament-matches/delete/src/
+  #    Handler: app.lambda_handler
+  #    Timeout: 30
+  #    Events:
+  #      ApiEndpoint:
+  #          Type: Api
+  #          Properties:
+  #            Path: /tournament-matches
+  #            Method: DELETE
+  #            RestApiId: !Ref Api
 
   ###########################################################
   # PICKEMS LAMBDAS                                         #
@@ -489,7 +489,7 @@ Resources:
             RestApiId: !Ref Api
 
   ###########################################################
-  # PICKEMS LAMBDAS                                         #
+  # DREAMDRAFT LAMBDAS                                      #
   ###########################################################
 
   CreateOrUpdateDreamDraftLambda:
