@@ -27,7 +27,10 @@ PATH_PERMISSIONS = {
     "DELETE /config": "admin",
 
     "GET /profiles": "admin",
-    "GET /profiles/{id}": "admin"
+    "GET /profiles/{id}": "admin",
+
+    "PUT /pickems": "user",
+    "PUT /dream-draft": "user",
 }
 
 def create_connection() -> pymysql.Connection:
