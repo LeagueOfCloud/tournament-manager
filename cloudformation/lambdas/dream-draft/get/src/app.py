@@ -25,12 +25,33 @@ def response(status_code, body):
 GET_DREAMDRAFT_SQL = """
 SELECT
     d.user_id,
-    d.selection_1,
-    d.selection_2,
-    d.selection_3,
-    d.selection_4,
-    d.selection_5
+
+    p1.id   AS selection_1_id,
+    p1.name AS selection_1_name,
+    p1.cost AS selection_1_cost,
+
+    p2.id   AS selection_2_id,
+    p2.name AS selection_2_name,
+    p2.cost AS selection_2_cost,
+
+    p3.id   AS selection_3_id,
+    p3.name AS selection_3_name,
+    p3.cost AS selection_3_cost,
+
+    p4.id   AS selection_4_id,
+    p4.name AS selection_4_name,
+    p4.cost AS selection_4_cost,
+
+    p5.id   AS selection_5_id,
+    p5.name AS selection_5_name,
+    p5.cost AS selection_5_cost
+
 FROM dreamdraft d
+JOIN players p1 ON d.selection_1 = p1.id
+JOIN players p2 ON d.selection_2 = p2.id
+JOIN players p3 ON d.selection_3 = p3.id
+JOIN players p4 ON d.selection_4 = p4.id
+JOIN players p5 ON d.selection_5 = p5.id
 WHERE d.user_id = %s
 """
 
@@ -39,11 +60,12 @@ WHERE d.user_id = %s
 # and so on. For now we just return IDs.
 
 def lambda_handler(event, context):
-    #method = event.get("httpMethod")
-    #if method != "GET":
-    #    return response(405, {"message": "Method Not Allowed"})
+    method = event.get("httpMethod")
+    if method != "GET":
+        return response(405, {"message": "Method Not Allowed"})
 
-    profile_id_raw = event["pathParameters"]["id"]
+    path_params = event.get("pathParameters") or {}
+    profile_id_raw = path_params.get("profile_id")
     if not profile_id_raw:
         return response(400, {"message": "Missing profile_id path parameter"})
 
@@ -62,15 +84,42 @@ def lambda_handler(event, context):
         if not row:
             return response(404, {"message": "DreamDraft selection not found for this profile"})
 
+        selection = [
+            {
+                "slot": 1,
+                "player_id": row["selection_1_id"],
+                "name": row["selection_1_name"],
+                "cost": row["selection_1_cost"],
+            },
+            {
+                "slot": 2,
+                "player_id": row["selection_2_id"],
+                "name": row["selection_2_name"],
+                "cost": row["selection_2_cost"],
+            },
+            {
+                "slot": 3,
+                "player_id": row["selection_3_id"],
+                "name": row["selection_3_name"],
+                "cost": row["selection_3_cost"],
+            },
+            {
+                "slot": 4,
+                "player_id": row["selection_4_id"],
+                "name": row["selection_4_name"],
+                "cost": row["selection_4_cost"],
+            },
+            {
+                "slot": 5,
+                "player_id": row["selection_5_id"],
+                "name": row["selection_5_name"],
+                "cost": row["selection_5_cost"],
+            },
+        ]
+
         return response(200, {
             "user_id": row["user_id"],
-            "selection": {
-                "selection_1": row["selection_1"],
-                "selection_2": row["selection_2"],
-                "selection_3": row["selection_3"],
-                "selection_4": row["selection_4"],
-                "selection_5": row["selection_5"],
-            }
+            "selection": selection
         })
 
     except Exception as e:
