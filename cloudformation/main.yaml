@@ -163,24 +163,32 @@ Resources:
           Properties:
             Path: /players
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
         ApiEndpointPlayersSpecific:
           Type: Api
           Properties:
             Path: /players/{id}
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
         ApiEndpointTeams:
           Type: Api
           Properties:
             Path: /teams
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
         ApiEndpointTeamsSpecific:
           Type: Api
           Properties:
             Path: /teams/{id}
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
         ApiEndpointRiotAccounts:
           Type: Api
