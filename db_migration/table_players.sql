@@ -9,3 +9,7 @@ CREATE TABLE IF NOT EXISTS tournament_db.players (
     FOREIGN KEY (team_id) REFERENCES tournament_db.teams(id),
     FOREIGN KEY (discord_id) REFERENCES tournament_db.profiles(discord_id)
 );
+
+
+ALTER TABLE tournament_db.players
+ADD COLUMN cost INT;
