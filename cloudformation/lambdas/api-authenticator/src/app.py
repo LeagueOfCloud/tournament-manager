@@ -3,14 +3,10 @@ import os
 import traceback
 
 PATH_PERMISSIONS = {
-    "GET /players/{id}": "admin",
-    "GET /players": "admin",
     "POST /players": "admin",
     "DELETE /players": "admin",
     "PATCH /players": "admin",
 
-    "GET /teams": "admin",
-    "GET /teams/{id}": "admin",
     "POST /teams": "admin",
     "DELETE /teams": "admin",
     "PATCH /teams": "admin",
@@ -27,7 +23,10 @@ PATH_PERMISSIONS = {
     "DELETE /config": "admin",
 
     "GET /profiles": "admin",
-    "GET /profiles/{id}": "admin"
+    "GET /profiles/{id}": "admin",
+
+    "PUT /pickems": "user",
+    "PUT /dream-draft": "user",
 }
 
 def create_connection() -> pymysql.Connection:

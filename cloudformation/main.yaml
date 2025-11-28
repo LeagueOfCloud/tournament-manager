@@ -163,24 +163,32 @@ Resources:
           Properties:
             Path: /players
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
         ApiEndpointPlayersSpecific:
           Type: Api
           Properties:
             Path: /players/{id}
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
         ApiEndpointTeams:
           Type: Api
           Properties:
             Path: /teams
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
         ApiEndpointTeamsSpecific:
           Type: Api
           Properties:
             Path: /teams/{id}
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
         ApiEndpointRiotAccounts:
           Type: Api
@@ -439,7 +447,7 @@ Resources:
               Path: /tournament-matches
               Method: PATCH
               RestApiId: !Ref Api
-
+  
   DeleteTournamentMatchLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -483,6 +491,40 @@ Resources:
           Type: Api
           Properties:
             Path: /pickems/{id}
+            Method: GET
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref Api
+
+  ###########################################################
+  # DREAMDRAFT LAMBDAS                                      #
+  ###########################################################
+
+  CreateOrUpdateDreamDraftLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/dream-draft/create-update/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /dream-draft
+            Method: PUT
+            RestApiId: !Ref Api
+
+  GetDreamDraftLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/dream-draft/get/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /dream-draft/{profile_id}
             Method: GET
             Auth:
               Authorizer: NONE
