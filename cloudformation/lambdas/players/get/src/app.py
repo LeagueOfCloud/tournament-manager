@@ -1,4 +1,5 @@
 import pymysql
+import os
 
 SELECT_PLAYERS_SQL = """
     SELECT
