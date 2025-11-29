@@ -6,28 +6,24 @@ PATH_PERMISSIONS = {
     "POST /players": "admin",
     "DELETE /players": "admin",
     "PATCH /players": "admin",
-
     "POST /teams": "admin",
     "DELETE /teams": "admin",
     "PATCH /teams": "admin",
-
     "GET /riot-accounts": "admin",
     "GET /riot-accounts/{id}": "admin",
     "GET /riot-accounts/player/{player_id}": "admin",
     "POST /riot-accounts": "admin",
     "DELETE /riot-accounts": "admin",
     "PATCH /riot-accounts": "admin",
-
     "GET /config": "admin",
     "PUT /config": "admin",
     "DELETE /config": "admin",
-
     "GET /profiles": "admin",
     "GET /profiles/{id}": "admin",
-
-    "PUT /pickems": "user",
-    "PUT /dream-draft": "user",
+    "PUT /pickems": ["admin", "user"],
+    "PUT /dream-draft": ["admin", "user"],
 }
+
 
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
@@ -36,29 +32,31 @@ def create_connection() -> pymysql.Connection:
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASSWORD"],
         database=os.environ["DB_NAME"],
-        cursorclass=pymysql.cursors.DictCursor
+        cursorclass=pymysql.cursors.DictCursor,
     )
 
-def generatePolicy(principalId, effect, error_message = "You are not allowed to do this."):
+
+def generatePolicy(
+    principalId, effect, error_message="You are not allowed to do this."
+):
     authResponse = {}
-    authResponse['principalId'] = principalId
-    if (effect and METHOD_ARN):
+    authResponse["principalId"] = principalId
+    if effect and METHOD_ARN:
         policyDocument = {}
-        policyDocument['Version'] = '2012-10-17'
-        policyDocument['Statement'] = []
+        policyDocument["Version"] = "2012-10-17"
+        policyDocument["Statement"] = []
         statementOne = {}
-        statementOne['Action'] = 'execute-api:Invoke'
-        statementOne['Effect'] = effect
-        statementOne['Resource'] = METHOD_ARN
-        policyDocument['Statement'] = [statementOne]
-        authResponse['policyDocument'] = policyDocument
+        statementOne["Action"] = "execute-api:Invoke"
+        statementOne["Effect"] = effect
+        statementOne["Resource"] = METHOD_ARN
+        policyDocument["Statement"] = [statementOne]
+        authResponse["policyDocument"] = policyDocument
 
         if effect == "Deny":
-            authResponse['context'] = {
-                'error_message': error_message
-            }
+            authResponse["context"] = {"error_message": error_message}
 
     return authResponse
+
 
 def lambda_handler(event, context):
     global METHOD_ARN
@@ -68,7 +66,9 @@ def lambda_handler(event, context):
     if event["httpMethod"] == "OPTIONS":
         return generatePolicy("OPTIONS", "Allow")
 
-    TOKEN = event["headers"].get("Authorization") or event["headers"].get("authorization")
+    TOKEN = event["headers"].get("Authorization") or event["headers"].get(
+        "authorization"
+    )
 
     connection = None
 
@@ -76,23 +76,24 @@ def lambda_handler(event, context):
         connection = create_connection()
 
         with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT * FROM profiles WHERE token = %s", 
-                (TOKEN)
-            )
+            cursor.execute("SELECT * FROM profiles WHERE token = %s", (TOKEN))
             result = cursor.fetchone()
-        
+
         if result == None:
             return generatePolicy("null", "Deny", "Invalid token provided")
 
         user_type = str(result.get("type", "null")).lower()
-        http_method = event['httpMethod']
-        path = event['resource'].rstrip("/")
+        http_method = event["httpMethod"]
+        path = event["resource"].rstrip("/")
 
         required_type = PATH_PERMISSIONS.get(f"{http_method} {path}")
 
-        if required_type and user_type != PATH_PERMISSIONS[f"{http_method} {path}"]:
-            return generatePolicy(user_type, "Deny", f"User type {user_type} is not allowed to execute {http_method} {path}")
+        if required_type and user_type not in PATH_PERMISSIONS[f"{http_method} {path}"]:
+            return generatePolicy(
+                user_type,
+                "Deny",
+                f"User type {user_type} is not allowed to execute {http_method} {path}",
+            )
 
         return generatePolicy(user_type, "Allow")
 

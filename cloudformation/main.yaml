@@ -102,6 +102,21 @@ Resources:
   ###########################################################
   # PLAYER LAMBDAS                                          #
   ###########################################################
+  GetPlayersLambda:
+      Type: AWS::Serverless::Function
+      Properties:
+        CodeUri: lambdas/players/get/src/
+        Handler: app.lambda_handler
+        Timeout: 30
+        Events:
+          ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /players
+              Method: GET
+              Auth:
+                Authorizer: NONE
+              RestApiId: !Ref Api
 
   CreatePlayerLambda:
     Type: AWS::Serverless::Function
@@ -158,14 +173,6 @@ Resources:
       Handler: app.lambda_handler
       Timeout: 30
       Events:
-        ApiEndpointPlayers:
-          Type: Api
-          Properties:
-            Path: /players
-            Method: GET
-            Auth:
-              Authorizer: NONE
-            RestApiId: !Ref Api
         ApiEndpointPlayersSpecific:
           Type: Api
           Properties:
