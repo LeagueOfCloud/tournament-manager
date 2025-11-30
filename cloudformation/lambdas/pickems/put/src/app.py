@@ -30,22 +30,20 @@ SELECT_TEAM_SQL = """
 
 connection = None
 
+
 def select_pickem(id):
     with connection.cursor() as cursor:
-        cursor.execute(SELECT_PICKEMS_SQL,
-                       id)
+        cursor.execute(SELECT_PICKEMS_SQL, id)
     row = cursor.fetchone()
     return row
 
+
 def upsert_pickem(id, pickem_id, user_id, value):
     with connection.cursor() as cursor:
-        cursor.execute(
-            UPSERT_PICKEMS_SQL, 
-            (id, pickem_id, user_id, value)
-        )
+        cursor.execute(UPSERT_PICKEMS_SQL, (id, pickem_id, user_id, value))
         connection.commit()
         return cursor.lastrowid
-             
+
 
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
@@ -57,77 +55,81 @@ def create_connection() -> pymysql.Connection:
         cursorclass=pymysql.cursors.DictCursor,
     )
 
+
 def pickems_unlocked() -> bool:
     with connection.cursor() as cursor:
-        cursor.execute(SELECT_CONFIG_SQL,
-                       ("pickem_unlocked"))
+        cursor.execute(SELECT_CONFIG_SQL, ("pickem_unlocked"))
     config = cursor.fetchone()
     if config["value"] == "true":
         return True
     return False
 
+
 def figure_out_pickems_type(id: str):
     with connection.cursor() as cursor:
-        cursor.execute(SELECT_CONFIG_SQL,
-                       ("pickem_categories"))
+        cursor.execute(SELECT_CONFIG_SQL, ("pickem_categories"))
     config = cursor.fetchone()
     row = next((i for i in json.loads(config["value"]) if i["id"] == id), None)
     return row["type"] if row else None
 
+
 def is_admin_user(user_id) -> bool:
     with connection.cursor() as cursor:
-        cursor.execute(SELECT_USER_SQL,
-                       user_id)
+        cursor.execute(SELECT_USER_SQL, user_id)
     config = cursor.fetchone()
-    if(config is None):
+    if config is None:
         return False
     if config["type"] != "admin":
         return False
     return True
 
+
 def get_user_id(token):
     with connection.cursor() as cursor:
-        cursor.execute(SELECT_USER_SQL,
-                       token)
+        cursor.execute(SELECT_USER_SQL, token)
     user = cursor.fetchone()
-    if(user["id"] is None):
-       return {
+    if user["id"] is None:
+        return {
             "statusCode": 400,
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+                "Access-Control-Allow-Origin": "*",
             },
             "body": json.dumps(f"Invalid user Id"),
-        } 
+        }
     return user["id"]
+
 
 def validate_player(player_value):
     with connection.cursor() as cursor:
-        cursor.execute(SELECT_PLAYER_SQL,
-                       player_value)
+        cursor.execute(SELECT_PLAYER_SQL, player_value)
     player = cursor.fetchone()
-    if(player is None):
+    if player is None:
         return False
     return True
 
+
 def validate_team(team_value):
     with connection.cursor() as cursor:
-        cursor.execute(SELECT_TEAM_SQL,
-                       team_value)
+        cursor.execute(SELECT_TEAM_SQL, team_value)
     team = cursor.fetchone()
-    if(team is None):
+    if team is None:
         return False
     return True
+
 
 def validate_champion(champion_value) -> bool:
     url = "https://ddragon.leagueoflegends.com/cdn/15.23.1/data/en_US/champion.json"
     response = requests.get(url)
-    response.raise_for_status() 
-    
+    response.raise_for_status()
+
     data = response.json()
-    champions = data["data"] 
-    
-    return any(champ["id"].lower() == champion_value.lower() for champ in champions.values())
+    champions = data["data"]
+
+    return any(
+        champ["id"].lower() == champion_value.lower() for champ in champions.values()
+    )
+
 
 def lambda_handler(event, context):
     global connection
@@ -136,31 +138,34 @@ def lambda_handler(event, context):
     connection = create_connection()
 
     pickem_id = pickem_data.get("id")
-    #stolen from nemi
-    user_token = event["headers"].get("Authorization") or event["headers"].get("authorization")
+    # stolen from nemi
+    user_token = event["headers"].get("Authorization") or event["headers"].get(
+        "authorization"
+    )
     value = pickem_data.get("value")
 
-
     if pickems_unlocked() is False:
-       if is_admin_user(user_token) is False:
+        if is_admin_user(user_token) is False:
             return {
-            "statusCode": 403,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps(f"https://uploads.dailydot.com/2024/11/nuh-uh-beocord.gif?auto=compress&fm=gif"),
-        }
-        
+                "statusCode": 403,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                "body": json.dumps(
+                    f"https://uploads.dailydot.com/2024/11/nuh-uh-beocord.gif?auto=compress&fm=gif"
+                ),
+            }
+
     if None in (pickem_id, value):
         return {
-        "statusCode": 400,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-        },
-        "body": json.dumps(f"Invalid data please fix and try again."),
-    }
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            },
+            "body": json.dumps(f"Invalid data please fix and try again."),
+        }
 
     pickems_type = figure_out_pickems_type(pickem_id)
     user_id = get_user_id(user_token)
@@ -172,54 +177,57 @@ def lambda_handler(event, context):
             valid = validate_champion(value)
         case "TEAM":
             valid = validate_team(value)
-        case "COUNT":
+        case "MISC":
             pass
         case _:
             return {
-        "statusCode": 400,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-        },
-        "body": json.dumps(f"Invalid pickems Id please fix and try again."),
-    }
+                "statusCode": 400,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                "body": json.dumps(f"Invalid pickems Id please fix and try again."),
+            }
 
-    if(not valid):
+    if not valid:
         return {
-        "statusCode": 400,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-        },
-        "body": json.dumps(f"Invalid data player/champion/team does not exsist"),
-    }
-
-    try:
-        if None in (pickem_id, user_id,):
-            return {
             "statusCode": 400,
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+                "Access-Control-Allow-Origin": "*",
             },
-            "body": json.dumps(f"Invalid data please fix and try again."),
+            "body": json.dumps(f"Invalid data player/champion/team does not exsist"),
         }
-        upsert_pickem(f"{pickem_id}-{user_id}", pickem_id, user_id, value)    
-        return {
-                "statusCode": 200,
+
+    try:
+        if None in (
+            pickem_id,
+            user_id,
+        ):
+            return {
+                "statusCode": 400,
                 "headers": {
                     "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
+                    "Access-Control-Allow-Origin": "*",
                 },
-                "body": json.dumps(f"Created/Updated Pickem"),
+                "body": json.dumps(f"Invalid data please fix and try again."),
             }
+        upsert_pickem(f"{pickem_id}-{user_id}", pickem_id, user_id, value)
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            },
+            "body": json.dumps(f"Created/Updated Pickem"),
+        }
     except Exception as e:
-        
+
         return {
             "statusCode": 500,
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+                "Access-Control-Allow-Origin": "*",
             },
             "body": json.dumps(f"Failed to create pickems, Error: {str(e)}"),
         }
