@@ -57,7 +57,7 @@ SELECT
     p5.name AS selection_5_name,
     p5.avatar_url AS selection_5_avatar_url,
     p5.cost AS selection_5_cost,
-    t5.tag AS sleection_5_tag
+    t5.tag AS selection_5_tag
 
 FROM dreamdraft d
 JOIN players p1 ON d.selection_1 = p1.id
