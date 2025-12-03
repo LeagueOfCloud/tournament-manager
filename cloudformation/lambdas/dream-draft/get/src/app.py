@@ -2,6 +2,7 @@ import json
 import os
 import pymysql
 
+
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
         host=os.environ["DB_HOST"],
@@ -9,18 +10,20 @@ def create_connection() -> pymysql.Connection:
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASSWORD"],
         database=os.environ["DB_NAME"],
-        cursorclass=pymysql.cursors.DictCursor
+        cursorclass=pymysql.cursors.DictCursor,
     )
+
 
 def response(status_code, body):
     return {
         "statusCode": status_code,
         "headers": {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
+            "Access-Control-Allow-Origin": "*",
         },
-        "body": json.dumps(body)
+        "body": json.dumps(body),
     }
+
 
 GET_DREAMDRAFT_SQL = """
 SELECT
@@ -28,36 +31,52 @@ SELECT
 
     p1.id   AS selection_1_id,
     p1.name AS selection_1_name,
+    p1.avatar_url AS selection_1_avatar_url,
     p1.cost AS selection_1_cost,
+    t1.tag AS team_1_tag,
 
     p2.id   AS selection_2_id,
     p2.name AS selection_2_name,
+    p2.avatar_url AS selection_2_avatar_url,
     p2.cost AS selection_2_cost,
+    t2.tag AS team_2_tag,
 
     p3.id   AS selection_3_id,
     p3.name AS selection_3_name,
+    p3.avatar_url AS selection_3_avatar_url,
     p3.cost AS selection_3_cost,
+    t3.tag AS team_3_tag,
 
     p4.id   AS selection_4_id,
     p4.name AS selection_4_name,
+    p4.avatar_url AS selection_4_avatar_url,
     p4.cost AS selection_4_cost,
+    t4.tag AS team_4_tag,
 
     p5.id   AS selection_5_id,
     p5.name AS selection_5_name,
+    p5.avatar_url AS selection_5_avatar_url,
     p5.cost AS selection_5_cost
+    t5.tag AS team_5_tag
 
 FROM dreamdraft d
 JOIN players p1 ON d.selection_1 = p1.id
+JOIN teams t1 ON p1.team_id = t1.id
 JOIN players p2 ON d.selection_2 = p2.id
+JOIN teams t2 ON p2.team_id = t2.id
 JOIN players p3 ON d.selection_3 = p3.id
+JOIN teams t3 ON p3.team_id = t3.id
 JOIN players p4 ON d.selection_4 = p4.id
+JOIN teams t4 ON p4.team_id = t4.id
 JOIN players p5 ON d.selection_5 = p5.id
+JOIN teams t5 ON p5.team_id = t5.id
 WHERE d.user_id = %s
 """
 
 # Optional: If you want to also return player names/costs, you can do a JOIN:
 # SELECT d.user_id, d.selection_1, ..., p1.name AS selection_1_name, ...
 # and so on. For now we just return IDs.
+
 
 def lambda_handler(event, context):
     method = event.get("httpMethod")
@@ -82,7 +101,9 @@ def lambda_handler(event, context):
             row = cursor.fetchone()
 
         if not row:
-            return response(404, {"message": "DreamDraft selection not found for this profile"})
+            return response(
+                404, {"message": "DreamDraft selection not found for this profile"}
+            )
 
         selection = [
             {
@@ -112,10 +133,7 @@ def lambda_handler(event, context):
             },
         ]
 
-        return response(200, {
-            "user_id": row["user_id"],
-            "selection": selection
-        })
+        return response(200, {"user_id": row["user_id"], "selection": selection})
 
     except Exception as e:
         return response(500, {"message": f"Internal server error: {str(e)}"})
