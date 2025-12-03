@@ -33,7 +33,7 @@ SELECT
     p1.name AS selection_1_name,
     p1.avatar_url AS selection_1_avatar_url,
     p1.cost AS selection_1_cost,
-    t1.tag AS selection_tag,
+    t1.tag AS selection_1_tag,
 
     p2.id   AS selection_2_id,
     p2.name AS selection_2_name,
