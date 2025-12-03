@@ -33,31 +33,31 @@ SELECT
     p1.name AS selection_1_name,
     p1.avatar_url AS selection_1_avatar_url,
     p1.cost AS selection_1_cost,
-    t1.tag AS team_1_tag,
+    t1.tag AS selection_tag,
 
     p2.id   AS selection_2_id,
     p2.name AS selection_2_name,
     p2.avatar_url AS selection_2_avatar_url,
     p2.cost AS selection_2_cost,
-    t2.tag AS team_2_tag,
+    t2.tag AS selection_2_tag,
 
     p3.id   AS selection_3_id,
     p3.name AS selection_3_name,
     p3.avatar_url AS selection_3_avatar_url,
     p3.cost AS selection_3_cost,
-    t3.tag AS team_3_tag,
+    t3.tag AS selection_3_tag,
 
     p4.id   AS selection_4_id,
     p4.name AS selection_4_name,
     p4.avatar_url AS selection_4_avatar_url,
     p4.cost AS selection_4_cost,
-    t4.tag AS team_4_tag,
+    t4.tag AS selection_4_tag,
 
     p5.id   AS selection_5_id,
     p5.name AS selection_5_name,
     p5.avatar_url AS selection_5_avatar_url,
     p5.cost AS selection_5_cost,
-    t5.tag AS team_5_tag
+    t5.tag AS sleection_5_tag
 
 FROM dreamdraft d
 JOIN players p1 ON d.selection_1 = p1.id
