@@ -107,30 +107,13 @@ def lambda_handler(event, context):
 
         selection = [
             {
-                "player_id": row["selection_1_id"],
-                "name": row["selection_1_name"],
-                "cost": row["selection_1_cost"],
-            },
-            {
-                "player_id": row["selection_2_id"],
-                "name": row["selection_2_name"],
-                "cost": row["selection_2_cost"],
-            },
-            {
-                "player_id": row["selection_3_id"],
-                "name": row["selection_3_name"],
-                "cost": row["selection_3_cost"],
-            },
-            {
-                "player_id": row["selection_4_id"],
-                "name": row["selection_4_name"],
-                "cost": row["selection_4_cost"],
-            },
-            {
-                "player_id": row["selection_5_id"],
-                "name": row["selection_5_name"],
-                "cost": row["selection_5_cost"],
-            },
+                "player_id": row[f"selection_{i}_id"],
+                "name": row[f"selection_{i}_name"],
+                "cost": row[f"selection_{i}_cost"],
+                "tag": row[f"selection_{i}_tag"],
+                "avatar_url": row[f"selection_{i}_avatar_url"],
+            }
+            for i in range(1, 6)  # 1 to 5
         ]
 
         return response(200, {"user_id": row["user_id"], "selection": selection})
