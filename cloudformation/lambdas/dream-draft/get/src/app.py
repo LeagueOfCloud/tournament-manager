@@ -56,7 +56,7 @@ SELECT
     p5.id   AS selection_5_id,
     p5.name AS selection_5_name,
     p5.avatar_url AS selection_5_avatar_url,
-    p5.cost AS selection_5_cost
+    p5.cost AS selection_5_cost,
     t5.tag AS team_5_tag
 
 FROM dreamdraft d
