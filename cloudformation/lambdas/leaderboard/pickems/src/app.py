@@ -9,6 +9,7 @@ SELECT
     avatar_url
 FROM profiles
 ORDER BY pickems_score DESC
+LIMIT 10
 """
 
 
