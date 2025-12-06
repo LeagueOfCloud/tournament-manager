@@ -8,7 +8,7 @@ SELECT
     discord_id,
     avatar_url
 FROM profiles
-ORDER BY pickems_score DESC
+ORDER BY dd_score DESC
 """
 
 
