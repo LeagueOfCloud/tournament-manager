@@ -29,9 +29,9 @@ MARK_MATCH_PROCESSED_SQL = """
 """
 
 INSERT_PROCESSED_MATCH_DATA_SQL = """
-    INSERT INTO processed_match_data (match_id, account_puuid, account_name, champion_name, teamPosition, goldEarned, totalDamageDealtToChampions, totalMinionsKilled, kills, deaths, assists, vision_score, win, queueId, gameDuration)
+    INSERT INTO processed_match_data (match_id, account_puuid, account_name, champion_name, teamPosition, goldEarned, totalHealsOnTeammates, totalDamageDealtToChampions, totalDamageTaken, damageSelfMitigated, damageDealtToTurrets, totalMinionsKilled, totalTimeCCDealt, objectivesStolen, kills, deaths, assists, vision_score, win, queueId, gameDuration)
     VALUES
-        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
     
 """
 
@@ -110,6 +110,9 @@ def extract_rows_for_known_puuids(match_id: str, payload: Dict[str, Any], known_
 
         gold = p.get("goldEarned")
         dmg = p.get("totalDamageDealtToChampions")
+        dmg_turret = p.get("damageDealtToTurrets")
+        dmg_taken = p.get("totalDamageTaken")
+        mitigated_dmg = p.get("damageSelfMitigated")
         cs = p.get("totalMinionsKilled")
         neutral_cs = p.get("neutralMinionsKilled")
         total_cs = cs + neutral_cs
@@ -117,12 +120,16 @@ def extract_rows_for_known_puuids(match_id: str, payload: Dict[str, Any], known_
         deaths = p.get("deaths")
         assists = p.get("assists")
         vision_score = p.get("visionScore")
+        heal = p.get("totalHealsOnTeammates")
+        monster_stolen = p.get("objectivesStolen")
+        cc = p.get("totalTimeCCDealt")
+
         win = str(p.get("win"))
 
         rows.append((
-            match_id, puuid, account_name, champion_name, team_position,
-            gold, dmg, total_cs, kills, deaths, assists, vision_score, win,
-            queue_id, game_duration
+            match_id, puuid, account_name, champion_name, team_position, monster_stolen,
+            gold, dmg, dmg_taken, mitigated_dmg, dmg_turret, cc, total_cs, kills, heal,
+            deaths, assists, vision_score, win, queue_id, game_duration
         ))
 
     return rows
