@@ -15,7 +15,7 @@ SELECT
     p.dd_score,
     ROW_NUMBER() OVER (ORDER BY p.pickems_score DESC, p.id ASC) AS rank
 FROM profiles AS p
-ORDER BY {} DESC, p.id ASC
+ORDER BY {column} DESC, p.id ASC
 LIMIT @limit OFFSET @offset
 """
 
@@ -67,7 +67,8 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cur:
             cur.execute(
-                GET_LEADERBOARD_PICKEMS_SQL.format(score_column), ((page - 1) * 10)
+                GET_LEADERBOARD_PICKEMS_SQL.format(column=score_column),
+                ((page - 1) * 10),
             )
             rows = cur.fetchall()
             cur.execute(GET_TOTAL_PAGES_SQL)
