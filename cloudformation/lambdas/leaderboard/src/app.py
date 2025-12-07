@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 import pymysql
 
 GET_LEADERBOARD_PICKEMS_SQL = """
@@ -71,7 +72,7 @@ def lambda_handler(event, context):
             cur.execute(GET_TOTAL_PAGES_SQL)
             total_pages = cur.fetchone()["total_pages"]
 
-        return response(200, {"items": rows, "pages": total_pages, "page": page})
+        return response(200, {"items": rows, "pages": int(total_pages), "page": page})
 
     except Exception as e:
-        return response(500, {"message": f"{e}"})
+        return response(500, {"message": f"{e}", "tracebakc": traceback.format_exc(e)})
