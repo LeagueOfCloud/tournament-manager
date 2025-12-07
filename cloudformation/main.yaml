@@ -541,33 +541,17 @@ Resources:
   # LEADERBOARD LAMBDAS                                     #
   ###########################################################
 
-  PickemsLeaderboardLambda:
+  LeaderboardLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/leaderboard/pickems/src/
+      CodeUri: lambdas/leaderboard/src/
       Handler: app.lambda_handler
       Timeout: 30
       Events:
         ApiEndpoint:
           Type: Api
           Properties:
-            Path: /leaderboard/pickems
-            Method: GET
-            Auth:
-              Authorizer: NONE
-            RestApiId: !Ref Api
-
-  DreamDraftLeaderboardLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: lambdas/leaderboard/dream-draft/src/
-      Handler: app.lambda_handler
-      Timeout: 30
-      Events:
-        ApiEndpoint:
-          Type: Api
-          Properties:
-            Path: /leaderboard/dream-draft
+            Path: /leaderboard/{board}
             Method: GET
             Auth:
               Authorizer: NONE
