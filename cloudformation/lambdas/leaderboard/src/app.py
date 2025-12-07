@@ -3,7 +3,9 @@ import os
 import traceback
 import pymysql
 
-GET_LEADERBOARD_PICKEMS_SQL = """
+CHUNK_SIZE = 8
+
+GET_LEADERBOARD_SQL = """
 SELECT
     p.id,
     p.name,
@@ -14,10 +16,10 @@ SELECT
     ROW_NUMBER() OVER (ORDER BY p.pickems_score DESC, p.id ASC) AS rank
 FROM profiles AS p
 ORDER BY {column} DESC, p.id ASC
-LIMIT 10 OFFSET %s
+LIMIT %s OFFSET %s
 """
 
-GET_TOTAL_PAGES_SQL = "SELECT CEIL(COUNT(*) / 10) AS total_pages FROM profiles"
+GET_TOTAL_PAGES_SQL = "SELECT CEIL(COUNT(*) / %s) AS total_pages FROM profiles"
 
 
 def response(status_code, body):
@@ -65,11 +67,11 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cur:
             cur.execute(
-                GET_LEADERBOARD_PICKEMS_SQL.format(column=score_column),
-                ((page - 1) * 10),
+                GET_LEADERBOARD_SQL.format(column=score_column),
+                ((page - 1) * 10, CHUNK_SIZE),
             )
             rows = cur.fetchall()
-            cur.execute(GET_TOTAL_PAGES_SQL)
+            cur.execute(GET_TOTAL_PAGES_SQL, (CHUNK_SIZE,))
             total_pages = cur.fetchone()["total_pages"]
 
         return response(200, {"items": rows, "pages": int(total_pages), "page": page})
