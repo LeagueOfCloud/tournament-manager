@@ -36,3 +36,11 @@ ADD COLUMN queueId INT;
 
 ALTER TABLE tournament_db.processed_match_data
 ADD COLUMN gameDuration INT;
+
+ALTER TABLE tournament_db.processed_match_data
+ADD COLUMN damageDealtToTurrets INT,
+ADD COLUMN totalDamageTaken INT,
+ADD COLUMN damageSelfMitigated INT,
+ADD COLUMN totalHealsOnTeammates INT,
+ADD COLUMN totalTimeCCDealt INT,
+ADD COLUMN objectivesStolen INT;

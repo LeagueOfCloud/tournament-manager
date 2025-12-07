@@ -28,11 +28,30 @@ MARK_MATCH_PROCESSED_SQL = """
     WHERE match_id = %s;
 """
 
-INSERT_PROCESSED_MATCH_DATA_SQL = """
-    INSERT INTO processed_match_data (match_id, account_puuid, account_name, champion_name, teamPosition, goldEarned, totalDamageDealtToChampions, totalMinionsKilled, kills, deaths, assists, vision_score, win, queueId, gameDuration)
+UPSERT_PROCESSED_MATCH_DATA_SQL = """
+    INSERT INTO processed_match_data (match_id, account_puuid, account_name, champion_name, teamPosition, goldEarned, totalDamageDealtToChampions, totalDamageTaken, totalHealsOnTeammates, damageSelfMitigated, damageDealtToTurrets, totalTimeCCDealt, totalMinionsKilled, kills, deaths, assists, vision_score, objectivesStolen, win, queueId, gameDuration)
     VALUES
-        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-    
+        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE
+        totalHealsOnTeammates = VALUES(totalHealsOnTeammates),
+        totalDamageTaken = VALUES(totalDamageTaken),
+        damageSelfMitigated = VALUES(damageSelfMitigated),
+        damageDealtToTurrets = VALUES(damageDealtToTurrets),
+        totalTimeCCDealt = VALUES(totalTimeCCDealt),
+        objectivesStolen = VALUES(objectivesStolen),
+        goldEarned = VALUES(goldEarned),
+        kills = VALUES(kills),
+        deaths = VALUES(deaths),
+        assists = VALUES(assists),
+        vision_score = VALUES(vision_score),
+        totalMinionsKilled = VALUES(totalMinionsKilled),
+        totalDamageDealtToChampions = VALUES(totalDamageDealtToChampions),
+        win = VALUES(win),
+        queueId = VALUES(queueId),
+        gameDuration = VALUES(gameDuration),
+        account_name = VALUES(account_name),
+        champion_name = VALUES(champion_name),
+        teamPosition = VALUES(teamPosition);
 """
 
 def get_connection() -> pymysql.Connection:
@@ -82,7 +101,7 @@ def insert_participant_rows(conn: pymysql.Connection, rows: List[Tuple]):
     if not rows:
         return
     with conn.cursor() as cur:
-        cur.executemany(INSERT_PROCESSED_MATCH_DATA_SQL, rows)
+        cur.executemany(UPSERT_PROCESSED_MATCH_DATA_SQL, rows)
 
 def mark_match_processed(conn: pymysql.Connection, match_id: str):
     with conn.cursor() as cur:
@@ -110,6 +129,9 @@ def extract_rows_for_known_puuids(match_id: str, payload: Dict[str, Any], known_
 
         gold = p.get("goldEarned")
         dmg = p.get("totalDamageDealtToChampions")
+        dmg_turret = p.get("damageDealtToTurrets")
+        dmg_taken = p.get("totalDamageTaken")
+        mitigated_dmg = p.get("damageSelfMitigated")
         cs = p.get("totalMinionsKilled")
         neutral_cs = p.get("neutralMinionsKilled")
         total_cs = cs + neutral_cs
@@ -117,12 +139,16 @@ def extract_rows_for_known_puuids(match_id: str, payload: Dict[str, Any], known_
         deaths = p.get("deaths")
         assists = p.get("assists")
         vision_score = p.get("visionScore")
+        heal = p.get("totalHealsOnTeammates")
+        obj_stolen = p.get("objectivesStolen")
+        cc = p.get("totalTimeCCDealt")
+
         win = str(p.get("win"))
 
         rows.append((
             match_id, puuid, account_name, champion_name, team_position,
-            gold, dmg, total_cs, kills, deaths, assists, vision_score, win,
-            queue_id, game_duration
+            gold, dmg, dmg_taken, heal, mitigated_dmg, dmg_turret, cc, total_cs, kills,
+            deaths, assists, vision_score, obj_stolen, win, queue_id, game_duration
         ))
 
     return rows
