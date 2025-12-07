@@ -3,9 +3,6 @@ import os
 import pymysql
 
 GET_LEADERBOARD_PICKEMS_SQL = """
-SET @limit := 10;
-SET @offset := ?;
-
 SELECT
     p.id,
     p.name,
@@ -16,7 +13,7 @@ SELECT
     ROW_NUMBER() OVER (ORDER BY p.pickems_score DESC, p.id ASC) AS rank
 FROM profiles AS p
 ORDER BY {column} DESC, p.id ASC
-LIMIT @limit OFFSET @offset
+LIMIT 10 OFFSET %s
 """
 
 GET_TOTAL_PAGES_SQL = "SELECT CEIL(COUNT(*) / 10) AS total_pages FROM profiles"
