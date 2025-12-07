@@ -49,7 +49,7 @@ def lambda_handler(event, context):
         return response(404, {"message": "Requested leaderboard could not be found"})
 
     qparams = event.get("queryStringParameters") or {}
-    page = qparams.get("page", 1)
+    page = int(qparams.get("page", 1))
 
     match leaderboard_type:
         case "pickems":
