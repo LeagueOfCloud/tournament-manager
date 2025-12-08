@@ -67,7 +67,7 @@ def lambda_handler(event, context):
         with connection.cursor() as cur:
             cur.execute(
                 GET_LEADERBOARD_SQL.format(column=score_column),
-                ((page - 1) * 10),
+                ((page - 1) * 8),
             )
             rows = cur.fetchall()
             cur.execute(GET_TOTAL_PAGES_SQL)
