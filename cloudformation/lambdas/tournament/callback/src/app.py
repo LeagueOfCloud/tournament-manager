@@ -3,6 +3,7 @@ import os
 import pymysql
 from datetime import datetime
 import requests
+import traceback
 
 GET_WINNING_TEAM_SQL = """
 SELECT
@@ -54,7 +55,7 @@ def lambda_handler(event, context):
             for game in games:
                 match_id = f"{game['region']}_{game['gameId']}"
                 tournament_match_id = json.loads(game["metaData"])["id"]
-                winner_puuid = game["winningTeam"]["puuid"]
+                winner_puuid = game["winningTeam"][0]["puuid"]
                 cur.execute(GET_WINNING_TEAM_SQL, (winner_puuid, match_id))
 
                 winner = cur.fetchone()
@@ -68,4 +69,4 @@ def lambda_handler(event, context):
         connection.commit()
 
     except Exception as e:
-        return
+        traceback.print_exc(e)
