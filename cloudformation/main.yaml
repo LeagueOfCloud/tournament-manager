@@ -573,6 +573,20 @@ Resources:
           Properties:
             Path: /tournament/create-lobby/{id}
             Method: POST
+            RestApiId: !Ref Api
+
+  TournamentCallbackLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/tournament/callback/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /tournament/callback
+            Method: POST
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
