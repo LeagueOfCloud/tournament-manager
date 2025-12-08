@@ -16,3 +16,10 @@ CREATE TABLE IF NOT EXISTS tournament_db.account_champion_mastery (
         REFERENCES tournament_db.riot_accounts (account_puuid)
         ON DELETE CASCADE
 );
+
+ALTER TABLE tournament_db.account_champion_mastery DROP FOREIGN KEY fk_account_champion_mastery_riot_accounts;
+ALTER TABLE tournament_db.account_champion_mastery
+    ADD CONSTRAINT fk_account_champion_mastery_riot_accounts
+    FOREIGN KEY (account_puuid)
+    REFERENCES tournament_db.riot_accounts (account_puuid)
+    ON DELETE CASCADE ON UPDATE CASCADE;
