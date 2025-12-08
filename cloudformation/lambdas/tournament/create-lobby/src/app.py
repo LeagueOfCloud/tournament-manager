@@ -5,11 +5,15 @@ import logging
 import requests
 
 SELECT_MATCH_SQL = """
-SELECT * FROM tournament_matches WHERE id = ?
+SELECT * FROM tournament_matches WHERE id = %s
 """
 
 GET_TOURNAMENT_ID_SQL = """
 SELECT * FROM config WHERE name = 'tournament_id'
+"""
+
+UPDATE_TOURNAMENT_MATCH_ID_SQL = """
+UPDATE tournament_matches SET lobby_code = %s WHERE id = %s
 """
 
 def create_connection() -> pymysql.Connection:
@@ -64,9 +68,13 @@ def lambda_handler(event, context):
                 "spectatorType": "ALL",
                 "teamSize": 1
             }
-            response = requests.post(api_url, headers=headers, json=body)
+            api_response = requests.post(api_url, headers=headers, json=body)
+            lobby_code = api_response.json()[0]
 
-            return response(200, {"message": "Lobby created successfully", "lobby_code": response.json()[0]})
+            cur.execute(UPDATE_TOURNAMENT_MATCH_ID_SQL, (lobby_code, int(tournament_match_id)))
+            connection.commit()
+
+            return response(200, {"message": "Lobby created successfully", "lobby_code": lobby_code})
 
     except Exception as e:
         return response(500, {"message": str(e)})

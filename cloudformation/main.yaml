@@ -571,7 +571,7 @@ Resources:
         ApiEndpoint:
           Type: Api
           Properties:
-            Path: /tournament/{id}
+            Path: /tournament/create-lobby/{id}
             Method: POST
             Auth:
               Authorizer: NONE
