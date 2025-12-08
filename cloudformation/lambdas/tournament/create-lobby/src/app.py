@@ -52,7 +52,9 @@ def lambda_handler(event, context):
 
             if not match:
                 return response(404, {"message": "Tournament match not found"})
-            
+            if match.get("lobby_code"):
+                return response(400, {"message": "Lobby already created for this match"})
+
             cur.execute(GET_TOURNAMENT_ID_SQL)
             tournament_id_entry = cur.fetchone()
             tournament_id = tournament_id_entry["value"]
