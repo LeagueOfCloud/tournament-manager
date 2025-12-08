@@ -536,3 +536,23 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
+
+  ###########################################################
+  # LEADERBOARD LAMBDAS                                     #
+  ###########################################################
+
+  LeaderboardLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/leaderboard/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /leaderboard/{board}
+            Method: GET
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref Api
