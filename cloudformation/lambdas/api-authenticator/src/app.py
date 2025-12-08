@@ -22,6 +22,7 @@ PATH_PERMISSIONS = {
     "GET /profiles/{id}": "admin",
     "PUT /pickems": ["admin", "user"],
     "PUT /dream-draft": ["admin", "user"],
+    "POST /tournament/{id}": "admin",
 }
 
 
