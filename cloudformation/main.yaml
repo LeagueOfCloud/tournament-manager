@@ -556,3 +556,23 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
+
+  ###########################################################
+  # TOURNAMENT LAMBDAS                                     #
+  ###########################################################
+
+  TournamentCreateLobbyLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/tournament/create-lobby/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /tournament/{id}
+            Method: POST
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref Api
