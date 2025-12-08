@@ -63,10 +63,10 @@ def lambda_handler(event, context):
             body = {
                 "enoughPlayers": True,
                 "mapType": "SUMMONERS_RIFT",
-                "metadata": json.dumps({"title": f"Tournament Match {tournament_match_id}"}),
-                "pickType": "BLIND_PICK",
+                "metadata": json.dumps({"id": int(tournament_match_id)}),
+                "pickType": "TOURNAMENT_DRAFT",
                 "spectatorType": "ALL",
-                "teamSize": 1
+                "teamSize": 5
             }
             api_response = requests.post(api_url, headers=headers, json=body)
             lobby_code = api_response.json()[0]
