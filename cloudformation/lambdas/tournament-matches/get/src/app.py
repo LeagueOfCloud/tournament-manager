@@ -60,7 +60,7 @@ def lambda_handler(event, context):
             for row in rows
         ]
 
-        return response(200, {})
+        return response(200, formatted_rows)
     except Exception as e:
         traceback.print_exc()
         return response(500, {"error": f"{e}"})
