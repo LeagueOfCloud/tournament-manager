@@ -194,8 +194,6 @@ Resources:
           Properties:
             Path: /matches
             Method: GET
-            Auth:
-              Authorizer: NONE
             RestApiId: !Ref Api
         ApiEndpointTeamsSpecific:
           Type: Api
