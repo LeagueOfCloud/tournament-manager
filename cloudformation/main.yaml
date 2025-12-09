@@ -189,12 +189,6 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
-        ApiEndpointMatches:
-          Type: Api
-          Properties:
-            Path: /matches
-            Method: GET
-            RestApiId: !Ref Api
         ApiEndpointTeamsSpecific:
           Type: Api
           Properties:
@@ -432,6 +426,20 @@ Resources:
   ###########################################################
   # TOURNAMENT MATCH LAMBDAS                                #
   ###########################################################
+
+  GetTournamentMatchLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/tournament-matches/get/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+            Type: Api
+            Properties:
+              Path: /tournament-matches
+              Method: GET
+              RestApiId: !Ref Api
 
   CreateTournamentMatchLambda:
     Type: AWS::Serverless::Function
