@@ -2,6 +2,7 @@ import pymysql
 import json
 import os
 import traceback
+from datetime import datetime
 
 SELECT_MATCHES_SQL = """
 SELECT
@@ -38,6 +39,10 @@ def response(status_code, body):
     }
 
 
+def format_date(dt: datetime):
+    return int(dt.timestamp() * 1000)
+
+
 def lambda_handler(event, context):
     try:
         connection = create_connection()
@@ -46,7 +51,16 @@ def lambda_handler(event, context):
             cur.execute(SELECT_MATCHES_SQL)
             rows = cur.fetchall()
 
-        return response(200, rows)
+        formatted_rows = [
+            {
+                **row,
+                "start_date": format_date(row["start_date"]),
+                "end_date": format_date(row["end_date"]) if row["end_date"] else None,
+            }
+            for row in rows
+        ]
+
+        return response(200, {})
     except Exception as e:
         traceback.print_exc()
         return response(500, {"error": f"{e}"})
