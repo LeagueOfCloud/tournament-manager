@@ -5,12 +5,26 @@ import pymysql
 
 ROUTES = {
     # Route config (resource -> table/columns/pk)
-    "players": {"table": "players", "columns": "id, name, discord_id, avatar_url, team_id, team_role, cost"},
+    "players": {
+        "table": "players",
+        "columns": "id, name, discord_id, avatar_url, team_id, team_role, cost",
+    },
     "teams": {"table": "teams", "columns": "id, name, logo_url, banner_url, tag"},
-    "riot-accounts": {"table": "riot_accounts", "columns": "id, account_name, account_puuid, player_id, is_primary"},
-    "profiles": {"table": "profiles", "columns": "id, name, discord_id, avatar_url, type"},
+    "riot-accounts": {
+        "table": "riot_accounts",
+        "columns": "id, account_name, account_puuid, player_id, is_primary",
+    },
+    "profiles": {
+        "table": "profiles",
+        "columns": "id, name, discord_id, avatar_url, type",
+    },
     "config": {"table": "config", "columns": "name, value"},
+    "matches": {
+        "table": "tournament_matches",
+        "columns": "id, team_1_id, team_2_id, start_date, end_date, winner_team_id, tournament_match_id, lobby_code",
+    },
 }
+
 
 # Helper functions
 def _safe_int(value, *, allow_none=False):
@@ -20,6 +34,7 @@ def _safe_int(value, *, allow_none=False):
         return int(value)
     except Exception:
         return None if allow_none else 0
+
 
 def _extract_path(event) -> str:
     # REST API
@@ -35,9 +50,11 @@ def _extract_path(event) -> str:
     # Fallback
     return "/"
 
+
 def _split_path_segments(path: str):
     # "/teams/5" -> ["teams","5"]
     return [seg for seg in (path or "").split("/") if seg]
+
 
 def _resolve_route_and_id(event):
     path_params = event.get("pathParameters") or {}
@@ -54,15 +71,17 @@ def _resolve_route_and_id(event):
     record_id = id_from_params if id_from_params is not None else id_from_path
     return resource, record_id
 
+
 def _response(status: int, body) -> dict:
     return {
         "statusCode": status,
         "headers": {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
+            "Access-Control-Allow-Origin": "*",
         },
-        "body": json.dumps(body, default=str)
+        "body": json.dumps(body, default=str),
     }
+
 
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
@@ -71,8 +90,9 @@ def create_connection() -> pymysql.Connection:
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASSWORD"],
         database=os.environ["DB_NAME"],
-        cursorclass=pymysql.cursors.DictCursor
+        cursorclass=pymysql.cursors.DictCursor,
     )
+
 
 def lambda_handler(event, context):
     request_id = getattr(context, "aws_request_id", "no-request-id")
@@ -81,7 +101,9 @@ def lambda_handler(event, context):
         resource, record_id = _resolve_route_and_id(event)
         qparams = event.get("queryStringParameters") or {}
 
-        print(f"{request_id} Incoming path: { _extract_path(event) } | resource={resource} id={record_id}")
+        print(
+            f"{request_id} Incoming path: { _extract_path(event) } | resource={resource} id={record_id}"
+        )
 
         if resource == "settings":
             conn = create_connection()
@@ -118,21 +140,21 @@ def lambda_handler(event, context):
                 # LIST (/resource)
                 if not record_id:
                     if table == "config":
-                        list_sql = (
-                            f"SELECT {columns} FROM {table} "
-                        )
+                        list_sql = f"SELECT {columns} FROM {table} "
                         cur.execute(list_sql)
                         rows = cur.fetchall()
                         formatted_rows = {row["name"]: row["value"] for row in rows}
 
                         return _response(200, formatted_rows)
-                    
+
                     else:
                         list_sql = (
                             f"SELECT {columns} FROM {table} "
                             f"ORDER BY id DESC LIMIT %s OFFSET %s"
                         )
-                        print(f"{request_id} LIST {table} limit={limit} offset={offset}")
+                        print(
+                            f"{request_id} LIST {table} limit={limit} offset={offset}"
+                        )
                         cur.execute(list_sql, (limit, offset))
                         rows = cur.fetchall()
 
@@ -140,13 +162,16 @@ def lambda_handler(event, context):
                         cur.execute(count_sql)
                         total = cur.fetchone()["total"]
 
-                        return _response(200, {
-                            "items": rows,
-                            "count": len(rows),
-                            "total": total,
-                            "limit": limit,
-                            "offset": offset
-                        })
+                        return _response(
+                            200,
+                            {
+                                "items": rows,
+                                "count": len(rows),
+                                "total": total,
+                                "limit": limit,
+                                "offset": offset,
+                            },
+                        )
 
                 # DETAIL (/resource/{id})
                 try:
@@ -154,7 +179,7 @@ def lambda_handler(event, context):
                 except Exception:
                     print(f"{request_id} Invalid id for {resource}: {record_id}")
                     return _response(400, {"message": "Invalid id"})
-        
+
                 detail_sql = f"SELECT {columns} FROM {table} WHERE id = %s"
                 print(f"{request_id} DETAIL {table}.id={record_id_val}")
                 cur.execute(detail_sql, (record_id_val,))
