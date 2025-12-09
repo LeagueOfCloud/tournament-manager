@@ -13,7 +13,7 @@ SELECT
 FROM tournament_matches m
 JOIN teams t1 ON t1.id = m.team_1_id
 JOIN teams t2 ON t2.id = m.team_2_id
-JOIN teams t3 ON t3.id = m.winner_team_id
+LEFT JOIN teams t3 ON t3.id = m.winner_team_id
 """
 
 
