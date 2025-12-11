@@ -18,3 +18,8 @@ DROP FOREIGN KEY fk_tournament_matches_winner_team_id;
 
 ALTER TABLE tournament_db.tournament_matches
 ADD CONSTRAINT fk_tournament_matches_winner_team_id FOREIGN KEY (winner_team_id) REFERENCES tournament_db.teams (id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE tournament_matches
+ADD COLUMN map VARCHAR(255) NOT NULL DEFAULT("SUMMONERS_RIFT"),
+ADD COLUMN pick_type VARCHAR(255) NOT NULL DEFAULT("TOURNAMENT_DRAFT"),
+ADD COLUMN team_size INT NOT NULL DEFAULT(5)
