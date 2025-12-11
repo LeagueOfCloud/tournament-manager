@@ -91,6 +91,9 @@ def build_update_query(player_data):
         update_fields.append("team_role = %s")
         values.append(player_data["team_role"])
     
+    if "cost" in player_data:
+        update_fields.append("cost = %s")
+        values.append(player_data["cost"])
     return update_fields, values
 
 def lambda_handler(event, context):
