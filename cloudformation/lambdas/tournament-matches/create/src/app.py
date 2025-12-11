@@ -16,7 +16,7 @@ def validate_match_data(match_data) -> bool:
         team_1_id = int(match_data.get("team_1_id", ""))
         team_2_id = int(match_data.get("team_2_id", ""))
         int(match_data.get("date", ""))
-        int(match_data.get("team_size", ""))
+        int(match_data.get("team_size", 5))
         if team_1_id == team_2_id:
             return False
     except (ValueError, TypeError):
