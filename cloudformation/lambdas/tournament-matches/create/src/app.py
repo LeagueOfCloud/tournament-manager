@@ -56,7 +56,7 @@ def lambda_handler(event, context):
     start_date = int(match_data.get("date"))
     map_ = match_data.get("map", "SUMMONERS_RIFT")
     pick_type = match_data.get("pick_type", "TOURNAMENT_DRAFT")
-    team_size = match_dat.get("team_size", 5)
+    team_size = match_data.get("team_size", 5)
     start_date_date = datetime.fromtimestamp(start_date / 1000)
 
     if start_date_date < datetime.now():
