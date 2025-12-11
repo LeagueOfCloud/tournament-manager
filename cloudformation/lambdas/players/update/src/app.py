@@ -18,7 +18,7 @@ def validate_player_data(player_data) -> bool:
     except (ValueError, TypeError):
         return False
     
-    updatable_fields = ["name", "discord_id", "team_role", "team_id"]
+    updatable_fields = ["name", "discord_id", "team_role", "team_id","cost"]
     if not any(field in player_data for field in updatable_fields):
         return False
     
