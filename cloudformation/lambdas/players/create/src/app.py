@@ -8,8 +8,8 @@ from datetime import datetime
 s3 = boto3.client("s3")
 
 INSERT_PLAYER_SQL = """
-    INSERT INTO players (name, avatar_url, discord_id, team_id, team_role)
-    VALUES (%s, %s, %s, %s, %s)
+    INSERT INTO players (name, avatar_url, discord_id, team_id, team_role, cost)
+    VALUES (%s, %s, %s, %s, %s, %s)
 """
 
 def validate_player_data(player_data) -> bool:
@@ -70,6 +70,7 @@ def lambda_handler(event, context):
     discord_id = player_data.get("discord_id")
     team_id = int(player_data.get("team_id"))
     team_role = player_data.get("team_role")
+    cost = int(player_data.get("cost"))
     
     connection = None
 
@@ -81,7 +82,7 @@ def lambda_handler(event, context):
         with connection.cursor() as cursor:
             cursor.execute(
                 INSERT_PLAYER_SQL, 
-                (name, avatar_url, discord_id, team_id, team_role)
+                (name, avatar_url, discord_id, team_id, team_role, cost)
             )
             connection.commit()
             insert_id = cursor.lastrowid
