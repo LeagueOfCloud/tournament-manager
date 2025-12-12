@@ -197,12 +197,6 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
-        ApiEndpointRiotAccounts:
-          Type: Api
-          Properties:
-            Path: /riot-accounts
-            Method: GET
-            RestApiId: !Ref Api
         ApiEndpointRiotAccountsSpecific:
           Type: Api
           Properties:
@@ -239,6 +233,20 @@ Resources:
   ###########################################################
   # RIOT ACCOUNT LAMBDAS                                    #
   ###########################################################
+
+  GetAccountsLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/riot-accounts/get/src
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /riot-accounts
+            Method: GET
+            RestApiId: !Ref Api
 
   CreateRiotAccountLambda:
     Type: AWS::Serverless::Function
