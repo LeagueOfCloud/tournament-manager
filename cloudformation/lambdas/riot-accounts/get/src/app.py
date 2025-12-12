@@ -4,7 +4,11 @@ import json
 
 SELECT_ACCOUNTS_SQL = """
     SELECT
-        acc.*,
+        acc.id,
+        acc.account_name,
+        acc.account_puuid,
+        acc.player_id,
+        acc.is_primary,
         p.name as player_name,
         (
             SELECT COUNT(*)
