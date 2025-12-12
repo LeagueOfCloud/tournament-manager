@@ -5,7 +5,7 @@ import json
 SELECT_ACCOUNTS_SQL = """
     SELECT
         acc.*,
-        p.name,
+        p.name as player_name,
         (
             SELECT COUNT(*)
             FROM processed_match_data pmd
