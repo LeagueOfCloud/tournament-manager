@@ -612,3 +612,38 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
+
+  ###########################################################
+  # SCHEDULE LAMBDAS                                     #
+  ###########################################################
+  GetScheduleMatchLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/schedule/get-schedule-match/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /schedule/match/{match_id}
+            Method: GET
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref Api
+
+  GetScheduleLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/schedule/get/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /schedule
+            Method: GET
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref Api
