@@ -21,19 +21,19 @@ def response(status_code, body):
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
         },
-        "body": json.dumps(body),
+        "body": json.dumps(body, default=str),
     }
 
 
 GET_SCHEDULE_SQL = """
 SELECT 
-    tm.tournament_match_id AS match_id,
-    t1.name AS team_1_name,
+    tm.id       AS match_id,
+    t1.name     AS team_1_name,
     t1.logo_url AS team_1_logo,
-    t1.tag AS team_1_tag,
-    t2.name AS team_2_name,
+    t1.tag      AS team_1_tag,
+    t2.name     AS team_2_name,
     t2.logo_url AS team_2_logo,
-    t2.tag AS team_2_tag,
+    t2.tag      AS team_2_tag,
     tm.start_date
 FROM tournament_matches tm
 JOIN teams t1 ON tm.team_1_id = t1.id
@@ -51,7 +51,7 @@ def lambda_handler(event, context):
         connection = create_connection()
         with connection.cursor() as cursor:
             cursor.execute(GET_SCHEDULE_SQL)
-            row = cursor.fetchone()
+            row = cursor.fetchall()
 
         if not row:
             return response(

@@ -32,24 +32,34 @@ SELECT
     t1.name AS team_1_name,
     t1.logo_url AS team_1_logo,
     t1.tag AS team_1_tag,
-    JSON_ARRAYAGG(JSON_OBJECT(
-        'name', p1.name,
-        'avatar_url', p1.avatar_url,
-        'team_role', p1.team_role
-    )) AS team_1_players,
+    (
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'name', p.name,
+                'avatar_url', p.avatar_url,
+                'team_role', p.team_role
+            )
+        )
+        FROM players p
+        WHERE p.team_id = t1.id
+    ) AS team_1_players,
     t2.name AS team_2_name,
     t2.logo_url AS team_2_logo,
     t2.tag AS team_2_tag,
-    JSON_ARRAYAGG(JSON_OBJECT(
-        'name', p2.name,
-        'avatar_url', p2.avatar_url,
-        'team_role', p2.team_role
-    )) AS team_2_players
+    (
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'name', p.name,
+                'avatar_url', p.avatar_url,
+                'team_role', p.team_role
+            )
+        )
+        FROM players p
+        WHERE p.team_id = t2.id
+    ) AS team_2_players
 FROM tournament_matches tm
 JOIN teams t1 ON tm.team_1_id = t1.id
 JOIN teams t2 ON tm.team_2_id = t2.id
-LEFT JOIN players p1 ON p1.team_id = t1.id
-LEFT JOIN players p2 ON p2.team_id = t2.id
 WHERE tm.id = %s
 """
 
@@ -81,7 +91,14 @@ def lambda_handler(event, context):
                 404, {"message": "No match found with the provided match id"}
             )
 
-        return response(200, {"schedule": row})
+        row["start_date"] = str(row["start_date"])
+
+        if row.get("team_1_players"):
+            row["team_1_players"] = json.loads(row["team_1_players"])
+        if row.get("team_2_players"):
+            row["team_2_players"] = json.loads(row["team_2_players"])
+
+        return response(200, {"match": row})
 
     except Exception as e:
         return response(500, {"message": f"Internal server error: {str(e)}"})
