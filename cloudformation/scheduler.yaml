@@ -36,6 +36,9 @@ Resources:
                   - !Ref FetchMatchDataLambdaArn
                   - !Ref FetchPlayerStatsLambdaArn
                   - !Ref ProcessMatchDataLambdaArn
+              - Effect: Allow
+                Action: ssm:SendCommand
+                Resource: "*"
 
   FetchChampionMasteryScheduler:
     Type: AWS::Scheduler::Schedule
