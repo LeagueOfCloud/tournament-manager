@@ -8,6 +8,8 @@ Parameters:
     Type: String
   S3AssetsBucket:
     Type: String
+  RestartDBInstanceId:
+    Type: String
 
 Globals:
   Function:
@@ -23,7 +25,7 @@ Globals:
         RIOT_API_KEY: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:riot_api_key}}"
         BUCKET_NAME: !Ref S3AssetsBucket
 
-Resources:
+Resources:          
   ###########################################################
   # NESTED STACKS                                           #
   ###########################################################
@@ -38,6 +40,8 @@ Resources:
         FetchMatchDataLambdaArn: !GetAtt FetchMatchDataLambda.Arn
         FetchPlayerStatsLambdaArn: !GetAtt FetchPlayerStatsLambda.Arn
         ProcessMatchDataLambdaArn: !GetAtt ProcessMatchDataLambda.Arn
+        RestartDBInstanceId: !Ref RestartDBInstanceId
+
 
   ###########################################################
   # REST-API DEFINITION                                     #
