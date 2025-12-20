@@ -11,6 +11,8 @@ Parameters:
     Type: String
   ProcessMatchDataLambdaArn:
     Type: String
+  RestartDBInstanceId:
+    Type: String
 
 Resources:
   MasterSchedulerRole:
@@ -94,4 +96,24 @@ Resources:
       Target:
         Arn: !Ref FetchPlayerStatsLambdaArn
         RoleArn: !GetAtt MasterSchedulerRole.Arn
+    
+  RestartDBScheduler:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: RestartDBSchedule
+      ScheduleExpression: cron(0 0 * * ? *)
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      Target:
+        Arn: "arn:aws:scheduler:::aws-sdk:ssm:sendCommand"
+        RoleArn: !GetAtt MasterSchedulerRole.Arn
+        Input: !Sub |
+          {
+            "DocumentName": "AWS-RunShellScript",
+            "InstanceIds": ["${RestartDBInstanceId}"],
+            "Parameters": {
+              "commands": ["systemctl restart mysqld"]
+            },
+            "Comment": "Scheduled restart of mysqld"
+          }
 
