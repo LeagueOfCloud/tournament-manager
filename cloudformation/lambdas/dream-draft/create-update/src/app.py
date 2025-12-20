@@ -38,7 +38,7 @@ def get_token_from_event(event) -> str | None:
     # if you sometimes send raw token, just return auth_header
     return auth_header
 
-def get_user_id_from_token(connection, token: str) -> int | None:
+def get_user_id_from_token(token: str) -> int | None:
     sql = "SELECT id FROM profiles WHERE token = %s"
     with connection.cursor() as cursor:
         cursor.execute(sql, (token,))
@@ -46,6 +46,24 @@ def get_user_id_from_token(connection, token: str) -> int | None:
         if not row:
             return None
         return int(row["id"])
+    
+def is_admin_user(user_id) -> bool:
+    with connection.cursor() as cursor:
+        cursor.execute(SELECT_USER_SQL, user_id)
+    config = cursor.fetchone()
+    if config is None:
+        return False
+    if config["type"] != "admin":
+        return False
+    return True
+    
+def dd_unlocked() -> bool:
+    with connection.cursor() as cursor:
+        cursor.execute(SELECT_CONFIG_SQL, ("dd_unlocked"))
+    config = cursor.fetchone()
+    if config["value"] == "true":
+        return True
+    return False
 
 # =========================
 # Validation helpers
@@ -76,7 +94,7 @@ def validate_selection_payload(body_json: dict) -> tuple[bool, str | None, list[
 
     return True, None, selections
 
-def validate_budget(connection, selections: list[int]) -> tuple[bool, str | None]:
+def validate_budget(selections: list[int]) -> tuple[bool, str | None]:
     """
     Check that:
       1) All players exist
@@ -120,11 +138,16 @@ ON DUPLICATE KEY UPDATE
     selection_5 = VALUES(selection_5);
 """
 
+SELECT_USER_SQL = """
+    SELECT id,type FROM profiles WHERE token = (%s)
+"""
+
+SELECT_CONFIG_SQL = """
+    SELECT value FROM config where name = (%s)
+"""
+
 def lambda_handler(event, context):
-    # Only allow PUT (or POST mapped as PUT)
-    #method = event.get("httpMethod")
-    #if method not in ("PUT", "POST"):
-    #    return response(405, {"message": "Method Not Allowed"})
+    global connection
 
     # Parse token
     token = get_token_from_event(event)
@@ -135,20 +158,36 @@ def lambda_handler(event, context):
         body_json = json.loads(event.get("body") or "{}")
     except json.JSONDecodeError:
         return response(400, {"message": "Invalid JSON body"})
+    
+    connection = create_connection()
 
     ok, err, selections = validate_selection_payload(body_json)
     if not ok:
         return response(400, {"message": err})
+    
+    user_token = event["headers"].get("Authorization") or event["headers"].get(
+        "authorization"
+    )
+    
+    if dd_unlocked() is False:
+        if is_admin_user(user_token) is False:
+            return {
+                "statusCode": 403,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                "body": json.dumps(
+                    f"https://uploads.dailydot.com/2024/11/nuh-uh-beocord.gif?auto=compress&fm=gif"
+                ),
+            }
 
-    connection = None
     try:
-        connection = create_connection()
-
-        user_id = get_user_id_from_token(connection, token)
+        user_id = get_user_id_from_token(token)
         if not user_id:
             return response(401, {"message": "Invalid token or user not found"})
 
-        ok, err = validate_budget(connection, selections)
+        ok, err = validate_budget(selections)
         if not ok:
             return response(400, {"message": err})
 
