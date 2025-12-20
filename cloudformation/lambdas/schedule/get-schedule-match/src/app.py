@@ -98,7 +98,7 @@ def lambda_handler(event, context):
         if row.get("team_2_players"):
             row["team_2_players"] = json.loads(row["team_2_players"])
 
-        return response(200, {"match": row})
+        return response(200, {"item": row})
 
     except Exception as e:
         return response(500, {"message": f"Internal server error: {str(e)}"})
