@@ -48,7 +48,7 @@ def lambda_handler(event, context):
     method = event.get("httpMethod")
     if method != "GET":
         return response(405, {"message": "Method Not Allowed"})
-    
+
     connection = None
     try:
         connection = create_connection()
@@ -61,7 +61,7 @@ def lambda_handler(event, context):
                 404, {"message": "No schedule found please set up some matches first."}
             )
 
-        return response(200, {"item": row})
+        return response(200, {"items": row})
 
     except Exception as e:
         return response(500, {"message": f"Internal server error: {str(e)}"})
