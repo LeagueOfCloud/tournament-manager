@@ -28,9 +28,12 @@ def response(status_code, body):
 GET_SCHEDULE_SQL = """
 SELECT 
     tm.id       AS match_id,
+    tm.winner_team_id,
+    t1.id 		as team_1_id,
     t1.name     AS team_1_name,
     t1.logo_url AS team_1_logo,
     t1.tag      AS team_1_tag,
+    t2.id 		AS team_2_id,
     t2.name     AS team_2_name,
     t2.logo_url AS team_2_logo,
     t2.tag      AS team_2_tag,
@@ -58,7 +61,7 @@ def lambda_handler(event, context):
                 404, {"message": "No schedule found please set up some matches first."}
             )
 
-        return response(200, {"schedule": row})
+        return response(200, {"item": row})
 
     except Exception as e:
         return response(500, {"message": f"Internal server error: {str(e)}"})
