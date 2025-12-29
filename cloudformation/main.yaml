@@ -798,7 +798,7 @@ Resources:
           TABLE_NAME:
             Ref: ConnectionsTable
   
-    WebSocketApi:
+  WebSocketApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
       Name: ChampSelectWebSocketApi
