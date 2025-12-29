@@ -18,7 +18,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
 
     print("endpoint_url : " + endpoint_url)
 
-    connection_ids = scan_table("Connections")
+    connection_ids = scan_table(os.environ["TABLE_NAME"])
 
     print("connection_ids : " + str(connection_ids))
 

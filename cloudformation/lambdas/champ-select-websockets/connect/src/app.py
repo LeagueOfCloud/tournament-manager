@@ -1,3 +1,4 @@
+import os
 import boto3
 from typing import Any, Dict
 
@@ -12,7 +13,7 @@ def lambda_handler(event, context):
         }
 
         put_item(
-            table_name="Connections",
+            table_name=os.environ["TABLE_NAME"],
             item=item
         )
 

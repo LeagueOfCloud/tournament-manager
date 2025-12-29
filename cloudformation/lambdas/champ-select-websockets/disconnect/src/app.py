@@ -1,4 +1,4 @@
-import json
+import os
 import boto3
 from typing import Any, Dict
 
@@ -6,45 +6,29 @@ ddb_client = boto3.client("dynamodb")
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
-    
-    print("event : " + json.dumps(event))
-    
-    endpoint_url = "https://" + "/".join([
-        event["requestContext"]["domainName"],
-        event["requestContext"]["stage"]
-    ])
+    try:
+        connection_id = event["requestContext"]["connectionId"]
 
-    print("endpoint_url : " + endpoint_url)
+        item = {
+            "connectionId": {"S": connection_id}
+        }
+        
+        print(item)
 
-    connection_ids = scan_table("Connections")
-
-    print("connection_ids : " + str(connection_ids))
-
-    apigateway_client = boto3.client(
-        "apigatewaymanagementapi",
-        endpoint_url=endpoint_url
-    )
-
-    for item in connection_ids.get("Items", []):
-        print("item : " + str(item))
-        body = json.loads(event["body"])
-        message = body["message"]
-        send_message(
-            apigateway_client,
-            item["connectionId"]["S"],
-            message
+        delete_item(
+            table_name=os.environ["TABLE_NAME"],
+            item=item
         )
+
+    except Exception as e:
+        print("it broke" + str(e))
+        return {"statusCode": 500}
 
     return {"statusCode": 200}
 
 
-def scan_table(table_name: str) -> Dict[str, Any]:
-    response = ddb_client.scan(TableName=table_name)
-    return response
-
-
-def send_message(apigateway_client, connection_id: str, message: str) -> None:
-    response = apigateway_client.post_to_connection(
-        Data=message.encode("utf-8"),
-        ConnectionId=connection_id
+def delete_item(table_name: str, item: Dict[str, Any]) -> None:
+    ddb_client.delete_item(
+        TableName=table_name,
+        Key=item
     )
