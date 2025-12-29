@@ -810,7 +810,7 @@ Resources:
     Properties:
       ApiId: !Ref WebSocketApi
       IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub >
+      IntegrationUri: !Sub |
         arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ConnectLambda.Arn}/invocations
 
   DisconnectIntegration:
@@ -818,7 +818,7 @@ Resources:
     Properties:
       ApiId: !Ref WebSocketApi
       IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub >
+      IntegrationUri: !Sub |
         arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DisconnectLambda.Arn}/invocations
 
   SendMessageIntegration:
@@ -826,7 +826,7 @@ Resources:
     Properties:
       ApiId: !Ref WebSocketApi
       IntegrationType: AWS_PROXY
-      IntegrationUri: !Sub >
+      IntegrationUri: !Sub |
         arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendMessageLambda.Arn}/invocations
 
   ConnectRoute:
@@ -835,6 +835,7 @@ Resources:
       ApiId: !Ref WebSocketApi
       RouteKey: "$connect"
       AuthorizationType: NONE
+      OperationName: ConnectRoute
       Target: !Sub integrations/${ConnectIntegration}
 
   DisconnectRoute:
