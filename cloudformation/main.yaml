@@ -584,7 +584,7 @@ Resources:
             RestApiId: !Ref Api
 
   ###########################################################
-  # TOURNAMENT LAMBDAS                                     #
+  # TOURNAMENT LAMBDAS                                      #
   ###########################################################
 
   TournamentCreateLobbyLambda:
@@ -618,7 +618,7 @@ Resources:
             RestApiId: !Ref Api
 
   ###########################################################
-  # SCHEDULE LAMBDAS                                     #
+  # SCHEDULE LAMBDAS                                        #
   ###########################################################
   GetScheduleMatchLambda:
     Type: AWS::Serverless::Function
@@ -651,3 +651,149 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
+
+
+  ###########################################################
+  # WebSockets                                              #
+  ###########################################################
+
+  ConnectionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: connectionId
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: connectionId
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+
+  ConnectHandlerServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ConnectHandlerServiceRoleDefaultPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:DescribeTable
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - ConnectionsTable
+                  - Arn
+              - Ref: AWS::NoValue
+        Version: "2012-10-17"
+      PolicyName: ConnectHandlerServiceRoleDefaultPolicy
+      Roles:
+        - Ref: ConnectHandlerServiceRole
+
+  ConnectLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/champ-select-websockets/connect/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Role:
+        Fn::GetAtt:
+          - ConnectHandlerServiceRole
+          - Arn
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: ConnectionsTable
+
+  DisconnectLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/champ-select-websockets/disconnect/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Role:
+        Fn::GetAtt:
+          - ConnectHandlerServiceRole
+          - Arn
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: ConnectionsTable
+
+  SendMessageHandlerServiceRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Statement:
+            - Action: sts:AssumeRole
+              Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+          Version: "2012-10-17"
+        ManagedPolicyArns:
+          - Fn::Join:
+              - ""
+              - - "arn:"
+                - Ref: AWS::Partition
+                - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SendMessageHandlerServiceRoleDefaultPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:Scan
+              - dynamodb:ConditionCheckItem
+              - dynamodb:DescribeTable
+            Effect: Allow
+            Resource:
+              - Fn::GetAtt:
+                  - ConnectionsTable
+                  - Arn
+              - Ref: AWS::NoValue
+        Version: "2012-10-17"
+      PolicyName: SendMessageHandlerServiceRoleDefaultPolicy
+      Roles:
+        - Ref: SendMessageHandlerServiceRole
+        
+  SendMessageLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/champ-select-websockets/send-message/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Role:
+        Fn::GetAtt:
+          - SendMessageHandlerServiceRole
+          - Arn
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: ConnectionsTable
