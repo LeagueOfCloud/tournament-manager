@@ -3,6 +3,7 @@ import os
 import uuid
 import boto3
 from typing import Any, Dict
+from datetime import datetime, timedelta
 
 
 ddb_client = boto3.client("dynamodb")
@@ -17,6 +18,7 @@ def lambda_handler(event, context):
         "redCaptain": {"S": ""},
         "blueCaptain": {"S": ""},
         "spectators": {"S": "[]"},
+        "TTL": {"N": str(round((datetime.now() + timedelta(days=1)).timestamp() * 1000))},
     }
 
     put_item(table_name=os.environ["TABLE_NAME"], item=item)

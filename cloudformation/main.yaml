@@ -126,6 +126,9 @@ Resources:
   ConnectionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
+      TimeToLiveSpecification:
+        AttributeName: TTL
+        Enabled: true
       KeySchema:
         - AttributeName: lobbyId
           KeyType: HASH
