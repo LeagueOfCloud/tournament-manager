@@ -675,7 +675,7 @@ Resources:
             Path: /champ-select-lobby
             Method: POST
             RestApiId: !Ref Api
-            Environment:
-              Variables:
-                TABLE_NAME:
-                  Ref: ConnectionsTable
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: ConnectionsTable
