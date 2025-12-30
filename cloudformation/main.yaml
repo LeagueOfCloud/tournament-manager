@@ -47,6 +47,8 @@ Resources:
     Type: AWS::Serverless::Application
     Properties:
       Location: ./websocket.yaml
+      Parameters:
+        ConnectionsTable: !Ref ConnectionsTable
 
 
   ###########################################################
@@ -108,6 +110,25 @@ Resources:
       CodeUri: lambdas/api-authenticator/src/
       Handler: app.lambda_handler
       Timeout: 30
+
+  ###########################################################
+  # DynamoDB                                                #
+  ###########################################################
+
+    ConnectionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: lobbyId
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: lobbyId
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
 
   ###########################################################
   # PLAYER LAMBDAS                                          #
