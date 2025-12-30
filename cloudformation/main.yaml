@@ -24,6 +24,7 @@ Globals:
         DB_NAME: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:name}}"
         RIOT_API_KEY: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:riot_api_key}}"
         BUCKET_NAME: !Ref S3AssetsBucket
+        TABLE_NAME: !Ref DynamoDBTable
 
 Resources:          
   ###########################################################
@@ -656,3 +657,25 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
+
+  ###########################################################
+  # CHAMP SELECT LAMBDAS                                    #
+  ###########################################################
+
+  ChampSelectLobbyCreateLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/champ-select/post/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /champ-select-lobby
+            Method: POST
+            RestApiId: !Ref Api
+            Environment:
+              Variables:
+                TABLE_NAME:
+                  Ref: ConnectionsTable

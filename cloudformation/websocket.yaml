@@ -5,15 +5,23 @@ Globals:
   Function:
     Runtime: python3.13
 
-Resources:    
+Resources:
+
+  WebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: ChampSelectWebSocketApi
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+
   ConnectionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
       KeySchema:
-        - AttributeName: connectionId
+        - AttributeName: lobbyId
           KeyType: HASH
       AttributeDefinitions:
-        - AttributeName: connectionId
+        - AttributeName: lobbyId
           AttributeType: S
       ProvisionedThroughput:
         ReadCapacityUnits: 5
@@ -86,13 +94,6 @@ Resources:
         Variables:
           TABLE_NAME:
             Ref: ConnectionsTable
-  
-  WebSocketApi:
-    Type: AWS::ApiGatewayV2::Api
-    Properties:
-      Name: ChampSelectWebSocketApi
-      ProtocolType: WEBSOCKET
-      RouteSelectionExpression: "$request.body.action"
 
   ConnectIntegration:
     Type: AWS::ApiGatewayV2::Integration
