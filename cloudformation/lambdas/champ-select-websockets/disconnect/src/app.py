@@ -1,6 +1,7 @@
 import json
 import os
 import boto3
+from boto3.dynamodb.conditions import Attr
 from typing import Any, Dict
 
 ddb_client = boto3.client("dynamodb")
@@ -8,17 +9,11 @@ ddb_client = boto3.client("dynamodb")
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
     try:
-        qparams = event.get("queryStringParameters") or {}
-
-        lobby_id = qparams.get("lobbyid")
         connection_id = event["requestContext"]["connectionId"]
-
-        if not lobby_id:
-            return { "statusCode": 400, "body": "No Lobby Id passed" }
         
         lobby = get_lobby(
-            table_name=os.environ["TABLE_NAME"],
-            lobby_id=lobby_id
+            os.environ["TABLE_NAME"],
+            connection_id
         )
 
         if not lobby:
@@ -56,11 +51,26 @@ def put_item(table_name: str, item: Dict[str, Any]) -> None:
         Item=item
     )
 
-def get_lobby(table_name: str, lobby_id: str) -> Dict[str, Any]:
-    response = ddb_client.get_item(
+def get_lobby(table_name: str, connection_id: str) -> Dict[str, Any]:
+    response = ddb_client.scan(
         TableName=table_name,
-        Key={
-            "lobbyId": {"S": f"LOBBY#{lobby_id}"}
+        FilterExpression=(
+            "contains(#spectators, :connection_id) "
+            "OR #blueCaptain = :connection_id "
+            "OR #redCaptain = :connection_id"
+        ),
+        ExpressionAttributeNames={
+            "#spectators": "spectators",
+            "#blueCaptain": "blueCaptain",
+            "#redCaptain": "redCaptain"
+        },
+        ExpressionAttributeValues={
+            ":connection_id": {"S": connection_id}
         }
     )
-    return response.get("Item", {})
+
+    items = response.get("Items", [])
+    if items:
+        return items[0]
+
+    return {}

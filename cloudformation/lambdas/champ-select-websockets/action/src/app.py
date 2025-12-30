@@ -9,37 +9,50 @@ ddb_client = boto3.client("dynamodb")
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
     
-    print("event : " + json.dumps(event))
-    
     endpoint_url = "https://" + "/".join([
         event["requestContext"]["domainName"],
         event["requestContext"]["stage"]
     ])
-
-    connection_ids = scan_table(os.environ["TABLE_NAME"])
 
     apigateway_client = boto3.client(
         "apigatewaymanagementapi",
         endpoint_url=endpoint_url
     )
 
-    for item in connection_ids.get("Items", []):
-        print("item : " + str(item))
-        body = json.loads(event["body"])
-        message = body["message"]
-        send_message(
-            apigateway_client,
-            item["connectionId"]["S"],
-            message
-        )
+    body = json.loads(event["body"])
+    action = body["action"]
+
+    match action:
+        case "banChampion":
+            ban_champion(
+                apigateway_client,
+                body["connectionId"],
+                body["championId"]
+            )
+        case "selectChampion":
+            select_champion(
+                apigateway_client,
+                body["connectionId"],
+                body["championId"]
+            )
+        case _:
+            return { "statusCode": 400, "body": "Invalid action" }
 
     return {"statusCode": 200}
 
+def ban_champion(apigateway_client, connection_id: str, champion_id: str) -> None:
+    message = json.dumps({
+        "action": "banChampion",
+        "championId": champion_id
+    })
+    send_message(apigateway_client, connection_id, message)
 
-def scan_table(table_name: str) -> Dict[str, Any]:
-    response = ddb_client.scan(TableName=table_name)
-    return response
-
+def select_champion(apigateway_client, connection_id: str, champion_id: str) -> None:
+    message = json.dumps({
+        "action": "selectChampion",
+        "championId": champion_id
+    })
+    send_message(apigateway_client, connection_id, message)
 
 def send_message(apigateway_client, connection_id: str, message: str) -> None:
     response = apigateway_client.post_to_connection(
