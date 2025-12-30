@@ -4,7 +4,7 @@ Transform: AWS::Serverless-2016-10-31
 Globals:
   Function:
     Runtime: python3.13
-    
+
 Resources:    
   ConnectionsTable:
     Type: AWS::DynamoDB::Table
@@ -42,6 +42,14 @@ Resources:
                   Action:
                     - dynamodb:*
                   Resource: !GetAtt ConnectionsTable.Arn
+          - PolicyName: ManageConnections
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - execute-api:ManageConnections
+                  Resource: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/* 
 
   ConnectLambda:
     Type: AWS::Serverless::Function
