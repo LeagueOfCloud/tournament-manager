@@ -21,44 +21,27 @@ Resources:
     UpdateReplacePolicy: Delete
     DeletionPolicy: Delete
 
-  ConnectHandlerServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: "2012-10-17"
-      ManagedPolicyArns:
-        - Fn::Join:
-            - ""
-            - - "arn:"
-              - Ref: AWS::Partition
-              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
-  ConnectHandlerServiceRoleDefaultPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyDocument:
-        Statement:
-          - Action:
-              - dynamodb:BatchWriteItem
-              - dynamodb:PutItem
-              - dynamodb:UpdateItem
-              - dynamodb:DeleteItem
-              - dynamodb:DescribeTable
-            Effect: Allow
-            Resource:
-              - Fn::GetAtt:
-                  - ConnectionsTable
-                  - Arn
-              - Ref: AWS::NoValue
-        Version: "2012-10-17"
-      PolicyName: ConnectHandlerServiceRoleDefaultPolicy
-      Roles:
-        - Ref: ConnectHandlerServiceRole
+  MasterLambdaRole:
+      Type: AWS::IAM::Role
+      Properties:
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement: 
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: S3BucketAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:*
+                  Resource: !GetAtt ConnectionsTable.Arn
 
   ConnectLambda:
     Type: AWS::Serverless::Function
@@ -66,10 +49,7 @@ Resources:
       CodeUri: lambdas/champ-select-websockets/connect/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Role:
-        Fn::GetAtt:
-          - ConnectHandlerServiceRole
-          - Arn
+      Role: !GetAtt MasterLambdaRole.Arn
       Environment:
         Variables:
           TABLE_NAME:
@@ -81,56 +61,11 @@ Resources:
       CodeUri: lambdas/champ-select-websockets/disconnect/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Role:
-        Fn::GetAtt:
-          - ConnectHandlerServiceRole
-          - Arn
+      Role: !GetAtt MasterLambdaRole.Arn
       Environment:
         Variables:
           TABLE_NAME:
             Ref: ConnectionsTable
-
-  SendMessageHandlerServiceRole:
-      Type: AWS::IAM::Role
-      Properties:
-        AssumeRolePolicyDocument:
-          Statement:
-            - Action: sts:AssumeRole
-              Effect: Allow
-              Principal:
-                Service: lambda.amazonaws.com
-          Version: "2012-10-17"
-        ManagedPolicyArns:
-          - Fn::Join:
-              - ""
-              - - "arn:"
-                - Ref: AWS::Partition
-                - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
-  SendMessageHandlerServiceRoleDefaultPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyDocument:
-        Statement:
-          - Action:
-              - dynamodb:BatchGetItem
-              - dynamodb:GetRecords
-              - dynamodb:GetShardIterator
-              - dynamodb:Query
-              - dynamodb:GetItem
-              - dynamodb:Scan
-              - dynamodb:ConditionCheckItem
-              - dynamodb:DescribeTable
-            Effect: Allow
-            Resource:
-              - Fn::GetAtt:
-                  - ConnectionsTable
-                  - Arn
-              - Ref: AWS::NoValue
-        Version: "2012-10-17"
-      PolicyName: SendMessageHandlerServiceRoleDefaultPolicy
-      Roles:
-        - Ref: SendMessageHandlerServiceRole
         
   SendMessageLambda:
     Type: AWS::Serverless::Function
@@ -138,10 +73,7 @@ Resources:
       CodeUri: lambdas/champ-select-websockets/send-message/src/
       Handler: app.lambda_handler
       Timeout: 30
-      Role:
-        Fn::GetAtt:
-          - SendMessageHandlerServiceRole
-          - Arn
+      Role: !GetAtt MasterLambdaRole.Arn
       Environment:
         Variables:
           TABLE_NAME:
@@ -225,7 +157,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref ConnectLambda
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*
 
   DisconnectLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -233,7 +165,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref DisconnectLambda
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*
 
   SendMessageLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -241,4 +173,4 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref SendMessageLambda
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*
