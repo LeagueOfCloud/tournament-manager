@@ -114,7 +114,7 @@ Resources:
   # DynamoDB                                                #
   ###########################################################
 
-    ConnectionsTable:
+  ConnectionsTable:
     Type: AWS::DynamoDB::Table
     Properties:
       KeySchema:
