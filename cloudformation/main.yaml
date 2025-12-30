@@ -102,6 +102,15 @@ Resources:
                   Resource:
                     - !Sub arn:aws:s3:::${S3AssetsBucket}
                     - !Sub arn:aws:s3:::${S3AssetsBucket}/*
+          - PolicyName: DynamoDBAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:*
+                  Resource:
+                    - !GetAtt ConnectionsTable.Arn
 
   ApiAuthenticatorLambda:
     Type: AWS::Serverless::Function
@@ -685,6 +694,7 @@ Resources:
   ChampSelectLobbyCreateLambda:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !GetAtt LambdaWithS3AccessRole.Arn
       CodeUri: lambdas/champ-select/post/src/
       Handler: app.lambda_handler
       Timeout: 30
