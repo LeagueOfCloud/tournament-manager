@@ -70,10 +70,10 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ConnectionsTable
 
-  ActionLambda:
+  SendMessageLambda:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: lambdas/champ-select-websockets/action/src/
+      CodeUri: lambdas/champ-select-websockets/sendmessage/src/
       Handler: app.lambda_handler
       Timeout: 30
       Role: !GetAtt MasterLambdaRole.Arn
@@ -97,13 +97,13 @@ Resources:
       IntegrationUri: 
         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DisconnectLambda.Arn}/invocations
 
-  ActionIntegration:
+  SendMessageIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
       ApiId: !Ref WebSocketApi
       IntegrationType: AWS_PROXY
       IntegrationUri:
-        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ActionLambda.Arn}/invocations
+        Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SendMessageLambda.Arn}/invocations
 
   ConnectRoute:
     Type: AWS::ApiGatewayV2::Route
@@ -122,20 +122,20 @@ Resources:
       AuthorizationType: NONE
       Target: !Sub integrations/${DisconnectIntegration}
 
-  ActionRoute:
+  SendMessageRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref WebSocketApi
-      RouteKey: "Action"
+      RouteKey: "SendMessage"
       AuthorizationType: NONE
-      Target: !Sub integrations/${ActionIntegration}
+      Target: !Sub integrations/${SendMessageIntegration}
 
   WebSocketDeployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
       - ConnectRoute
       - DisconnectRoute
-      - ActionRoute
+      - SendMessageRoute
     Properties:
       ApiId: !Ref WebSocketApi
 
@@ -162,10 +162,10 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*
 
-  ActionLambdaPermission:
+  SendMessageLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref ActionLambda
+      FunctionName: !Ref SendMessageLambda
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebSocketApi}/*
