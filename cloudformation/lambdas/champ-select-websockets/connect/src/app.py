@@ -40,7 +40,7 @@ def lambda_handler(event, context):
             table_name=os.environ["TABLE_NAME"],
             item=lobby
         )
-        
+
     except Exception as e:
         error_type = type(e).__name__ 
         error_message = str(e) 
@@ -60,7 +60,7 @@ def get_lobby(table_name: str, lobby_id: str) -> Dict[str, Any]:
     response = ddb_client.get_item(
         TableName=table_name,
         Key={
-            "lobbyId": {"S": lobby_id}
+            "lobbyId": {"S": f"LOBBY#{lobby_id}"}
         }
     )
     return response.get("Item", {})
