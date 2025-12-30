@@ -678,4 +678,4 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME:
-            Ref: ConnectionsTable
+            !Ref: ConnectionsTable
