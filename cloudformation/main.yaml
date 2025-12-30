@@ -24,7 +24,6 @@ Globals:
         DB_NAME: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:name}}"
         RIOT_API_KEY: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:riot_api_key}}"
         BUCKET_NAME: !Ref S3AssetsBucket
-        TABLE_NAME: !Ref DynamoDBTable
 
 Resources:          
   ###########################################################
@@ -48,7 +47,7 @@ Resources:
     Properties:
       Location: ./websocket.yaml
       Parameters:
-        ConnectionsTable: !Ref ConnectionsTable
+        ConnectionsTable: !GetAtt ConnectionsTable.Arn
 
 
   ###########################################################
@@ -698,5 +697,4 @@ Resources:
             RestApiId: !Ref Api
       Environment:
         Variables:
-          TABLE_NAME:
-            !Ref: ConnectionsTable
+          TABLE_NAME: !Ref ConnectionsTable

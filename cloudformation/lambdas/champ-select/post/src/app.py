@@ -2,6 +2,7 @@ import json
 import os
 import uuid
 import boto3
+from typing import Any, Dict
 
 
 ddb_client = boto3.client("dynamodb")

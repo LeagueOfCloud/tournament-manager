@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  ConnectionsTable:
+    Type: String
+
 Globals:
   Function:
     Runtime: python3.13
@@ -34,7 +38,7 @@ Resources:
                 - Effect: Allow
                   Action:
                     - dynamodb:*
-                  Resource: !GetAtt ConnectionsTable.Arn
+                  Resource: !Ref ConnectionsTable
           - PolicyName: ManageConnections
             PolicyDocument:
               Version: "2012-10-17"
@@ -53,8 +57,7 @@ Resources:
       Role: !GetAtt MasterLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME:
-            Ref: ConnectionsTable
+          TABLE_NAME: !Ref ConnectionsTable
 
   DisconnectLambda:
     Type: AWS::Serverless::Function
@@ -65,9 +68,8 @@ Resources:
       Role: !GetAtt MasterLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME:
-            Ref: ConnectionsTable
-        
+          TABLE_NAME: !Ref ConnectionsTable
+
   SendMessageLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -77,8 +79,7 @@ Resources:
       Role: !GetAtt MasterLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME:
-            Ref: ConnectionsTable
+          TABLE_NAME: !Ref ConnectionsTable
 
   ConnectIntegration:
     Type: AWS::ApiGatewayV2::Integration
