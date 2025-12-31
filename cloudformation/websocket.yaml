@@ -122,11 +122,27 @@ Resources:
       AuthorizationType: NONE
       Target: !Sub integrations/${DisconnectIntegration}
 
-  SendMessageRoute:
+  BanChampionRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref WebSocketApi
-      RouteKey: "SendMessage"
+      RouteKey: "BanChampion"
+      AuthorizationType: NONE
+      Target: !Sub integrations/${SendMessageIntegration}
+
+  SelectChampionRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: "SelectChampion"
+      AuthorizationType: NONE
+      Target: !Sub integrations/${SendMessageIntegration}
+
+  StartRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: "Start"
       AuthorizationType: NONE
       Target: !Sub integrations/${SendMessageIntegration}
 
