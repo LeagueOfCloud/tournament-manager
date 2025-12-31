@@ -146,6 +146,17 @@ Resources:
       AuthorizationType: NONE
       Target: !Sub integrations/${SendMessageIntegration}
 
+  WebSocketDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - ConnectRoute
+      - DisconnectRoute
+      - BanChampionRoute
+      - SelectChampionRoute
+      - StartRoute
+    Properties:
+      ApiId: !Ref WebSocketApi
+
   WebSocketStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
