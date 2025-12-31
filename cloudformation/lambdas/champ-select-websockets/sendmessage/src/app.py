@@ -52,14 +52,14 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
 
 def ban_champion(apigateway_client, lobby: object, champion_id: str) -> None:
     message = json.dumps({
-        "action": "banChampion",
+        "action": "BanChampion",
         "championId": champion_id
     })
     broadcast_message(apigateway_client, lobby["spectators"] + [lobby["blueCaptain"], lobby["redCaptain"]], message)
 
 def select_champion(apigateway_client, lobby: object, champion_id: str) -> None:
     message = json.dumps({
-        "action": "selectChampion",
+        "action": "SelectChampion",
         "championId": champion_id
     })
     broadcast_message(apigateway_client, lobby["spectators"] + [lobby["blueCaptain"], lobby["redCaptain"]], message)
