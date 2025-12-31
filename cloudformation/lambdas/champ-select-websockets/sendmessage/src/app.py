@@ -1,7 +1,7 @@
 import json
 import os
 import boto3
-from botocore.exceptions import ClientError
+import traceback
 from typing import Any, Dict
 
 ddb_client = boto3.client("dynamodb")
@@ -36,13 +36,13 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
         case "BanChampion":
             ban_champion(
                 apigateway_client,
-                connection_id,
+                lobby,
                 body["ChampionId"]
             )
         case "SelectChampion":
             select_champion(
                 apigateway_client,
-                connection_id,
+                lobby,
                 body["ChampionId"]
             )
         case _:
@@ -55,6 +55,7 @@ def ban_champion(apigateway_client, lobby: object, champion_id: str) -> None:
         "action": "BanChampion",
         "championId": champion_id
     })
+
     broadcast_message(apigateway_client, lobby["spectators"] + [lobby["blueCaptain"], lobby["redCaptain"]], message)
 
 def select_champion(apigateway_client, lobby: object, champion_id: str) -> None:
@@ -70,8 +71,9 @@ def send_message(apigateway_client, connection_id: str, message: str) -> None:
         ConnectionId=connection_id
     )
 
-def broadcast_message(apigateway_client, connection_ids: list[str], message: str) -> None:
-    for connection_id in connection_ids:
+def broadcast_message(apigateway_client, connection_ids: list, message: str) -> None:
+    connection_ids_filtered = list(filter(lambda c: c, connection_ids))
+    for connection_id in connection_ids_filtered:
         send_message(apigateway_client, connection_id, message)
 
 def get_lobby(lobby_id: str) -> Dict[str, Any]:
@@ -85,11 +87,12 @@ def get_lobby(lobby_id: str) -> Dict[str, Any]:
 
         return {
             "lobbyId": lobby_id,
-            "blueCaptain": item["blueCaptain"]["S"],
-            "redCaptain": item["redCaptain"]["S"],
+            "blueCaptain": item.get("blueCaptain", {}).get("S"),
+            "redCaptain": item.get("redCaptain", {}).get("S"),
             "spectators": json.loads(item["spectators"]["S"]),
         }
     
-    except ClientError as e:
+    except Exception as e:
         print(f"Error fetching lobby {lobby_id}: {e.response['Error']['Message']}")
+        traceback.print_exc()
         return {}
