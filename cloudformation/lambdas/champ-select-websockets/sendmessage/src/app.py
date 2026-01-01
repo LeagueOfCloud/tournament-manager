@@ -51,12 +51,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
 def ban_champion(lobby: object, champion_id: str) -> None:
     message = json.dumps({"action": "BanChampion", "ChampionId": champion_id})
 
-    broadcast_message(APIGW_CLIENT, ALL_CONNECTIONS, message)
+    broadcast_message(ALL_CONNECTIONS, message)
 
 
 def select_champion(lobby: object, champion_id: str) -> None:
     message = json.dumps({"action": "SelectChampion", "ChampionId": champion_id})
-    broadcast_message(APIGW_CLIENT, ALL_CONNECTIONS, message)
+    broadcast_message(ALL_CONNECTIONS, message)
 
 
 def send_message(connection_id: str, message: str) -> None:
@@ -68,7 +68,7 @@ def send_message(connection_id: str, message: str) -> None:
 def broadcast_message(connection_ids: list, message: str) -> None:
     connection_ids_filtered = list(filter(lambda c: c, connection_ids))
     for connection_id in connection_ids_filtered:
-        send_message(APIGW_CLIENT, connection_id, message)
+        send_message(connection_id, message)
 
 
 def put_item(item: Dict[str, Any]) -> None:
