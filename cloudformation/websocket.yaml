@@ -171,7 +171,7 @@ Resources:
     Properties:
       StageName: prod
       ApiId: !Ref WebSocketApi
-      DeploymentId: !Ref WebSocketDeployment
+      DeploymentId: !Ref WebSocketDeployment1
 
   ConnectLambdaPermission:
     Type: AWS::Lambda::Permission
