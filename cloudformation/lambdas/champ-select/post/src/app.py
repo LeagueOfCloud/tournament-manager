@@ -18,7 +18,7 @@ def lambda_handler(event, context):
         "redCaptain": {"S": ""},
         "blueCaptain": {"S": ""},
         "spectators": {"S": "[]"},
-        "TTL": {"N": str(round((datetime.now() + timedelta(days=1)).timestamp() * 1000))},
+        "TTL": {"N": str(round((datetime.now() + timedelta(days=1)).timestamp()))},
     }
 
     put_item(table_name=os.environ["TABLE_NAME"], item=item)
