@@ -154,7 +154,7 @@ Resources:
       AuthorizationType: NONE
       Target: !Sub integrations/${SendMessageIntegration}
 
-  WebSocketDeployment:
+  WebSocketDeployment1:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
       - ConnectRoute
@@ -162,6 +162,7 @@ Resources:
       - BanChampionRoute
       - SelectChampionRoute
       - StartRoute
+      - SyncRoute
     Properties:
       ApiId: !Ref WebSocketApi
 
