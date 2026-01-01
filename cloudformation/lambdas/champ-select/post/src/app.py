@@ -18,6 +18,7 @@ def lambda_handler(event, context):
         "redCaptain": {"S": ""},
         "blueCaptain": {"S": ""},
         "spectators": {"S": "[]"},
+        "state": {"S": "WAITING"},
         "TTL": {"N": str(round((datetime.now() + timedelta(days=1)).timestamp()))},
     }
 
