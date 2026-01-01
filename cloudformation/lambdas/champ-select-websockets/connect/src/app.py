@@ -7,14 +7,6 @@ ddb_client = boto3.client("dynamodb")
 
 
 def lambda_handler(event, context):
-    global APIGW_CLIENT
-
-    endpoint_url = "https://" + "/".join(
-        [event["requestContext"]["domainName"], event["requestContext"]["stage"]]
-    )
-
-    APIGW_CLIENT = boto3.client("apigatewaymanagementapi", endpoint_url=endpoint_url)
-
     try:
         qparams = event.get("queryStringParameters") or {}
 
@@ -36,20 +28,11 @@ def lambda_handler(event, context):
 
         if team_type == "blue" and not blue_captain:
             lobby["blueCaptain"] = {"S": connection_id}
-            send_message(
-                connection_id, json.dumps({"action": "Role", "Role": "blueCaptain"})
-            )
         elif team_type == "red" and not red_captain:
             lobby["redCaptain"] = {"S": connection_id}
-            send_message(
-                connection_id, json.dumps({"action": "Role", "Role": "redCaptain"})
-            )
         else:
             spectators.append(connection_id)
             lobby["spectators"] = {"S": json.dumps(spectators)}
-            send_message(
-                connection_id, json.dumps({"action": "Role", "Role": "spectator"})
-            )
 
         put_item(table_name=os.environ["TABLE_NAME"], item=lobby)
 
@@ -60,12 +43,6 @@ def lambda_handler(event, context):
         return {"statusCode": 500, "body": f"{error_type}: {error_message}"}
 
     return {"statusCode": 200}
-
-
-def send_message(connection_id: str, message: str) -> None:
-    APIGW_CLIENT.post_to_connection(
-        Data=message.encode("utf-8"), ConnectionId=connection_id
-    )
 
 
 def put_item(table_name: str, item: Dict[str, Any]) -> None:

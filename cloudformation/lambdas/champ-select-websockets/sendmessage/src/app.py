@@ -38,6 +38,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
         case "Start":
             if connection_id in [lobby["blueCaptain"], lobby["redCaptain"]]:
                 broadcast_message(ALL_CONNECTIONS, json.dumps({"action": "Start"}))
+        case "Sync":
+            send_message(
+                connection_id, json.dumps({"connectionId": connection_id, **lobby})
+            )
         case _:
             send_message(connection_id, "Invalid Action")
 

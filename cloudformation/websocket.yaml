@@ -146,6 +146,14 @@ Resources:
       AuthorizationType: NONE
       Target: !Sub integrations/${SendMessageIntegration}
 
+  SyncRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: "Sync"
+      AuthorizationType: NONE
+      Target: !Sub integrations/${SendMessageIntegration}
+
   WebSocketDeployment:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
