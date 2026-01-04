@@ -11,7 +11,9 @@ ddb_client = boto3.client("dynamodb")
 
 def lambda_handler(event, context):
 
-    lobby_id = f"LOBBY#{str(uuid.uuid4())}"
+    lobby_guid = str(uuid.uuid4())
+
+    lobby_id = f"LOBBY#{lobby_guid}"
 
     item = {
         "lobbyId": {"S": lobby_id},
@@ -27,7 +29,7 @@ def lambda_handler(event, context):
 
     put_item(table_name=os.environ["TABLE_NAME"], item=item)
 
-    return response(200, {"lobbyId": lobby_id})
+    return response(200, {"lobbyId": lobby_guid})
 
 
 def put_item(table_name: str, item: Dict[str, Any]) -> None:
