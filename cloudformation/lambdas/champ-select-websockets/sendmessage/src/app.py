@@ -92,6 +92,9 @@ def get_lobby(lobby_id: str) -> Tuple[dict, Dict[str, Any]]:
                 "redCaptain": item.get("redCaptain", {}).get("S"),
                 "spectators": json.loads(item["spectators"]["S"]),
                 "state": item.get("state", {}).get("S"),
+                "bans": json.loads(item["bans"]["S"]),
+                "redTeamChampions": json.loads(item["redTeamChampions"]["S"]),
+                "blueTeamChampions": json.loads(item["blueTeamChampions"]["S"]),
             },
         )
 
