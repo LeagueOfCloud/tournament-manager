@@ -128,7 +128,7 @@ def ban_champion(
     if lobby["state"] == "BlueTeamBan":
         lobby["state"] = State.RedTeamBan.name
     elif lobby["state"] == "RedTeamBan":
-        lobby["state"] = State.BlueTeamPick.name
+        lobby["state"] = State.BlueTeamBan.name
     lobby["bans"].append(champion_id)
     message = json.dumps({"action": "BanChampion", "ChampionId": champion_id})
     broadcast_message(ALL_CONNECTIONS, message)
