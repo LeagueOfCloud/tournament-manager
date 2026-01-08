@@ -164,7 +164,7 @@ def ban_champion(
         return
     
     lobby.setdefault("bans", [])
-    if champion_id in lobby["bans"]:
+    if champion_id in lobby["bans"] or champion_id in lobby.get("blueTeamChampions", []) or champion_id in lobby.get("redTeamChampions", []):
         send_message(connection_id, "Champion already banned")
         return
 
@@ -193,8 +193,8 @@ def select_champion(
     lobby.setdefault("blueTeamChampions", [])
     lobby.setdefault("redTeamChampions", [])
 
-    if champion_id in lobby["blueTeamChampions"] or champion_id in lobby["redTeamChampions"]:
-        send_message(connection_id, "Champion already picked")
+    if champion_id in lobby["bans"] or champion_id in lobby.get("blueTeamChampions", []) or champion_id in lobby.get("redTeamChampions", []):
+        send_message(connection_id, "Champion already banned")
         return
 
     if lobby["state"] == "BlueTeamPick":
