@@ -16,6 +16,29 @@ class State(Enum):
     RedTeamPick = 5
 
 
+STATE_SEQUENCE = [
+    State.BlueTeamBan.name,
+    State.RedTeamBan.name,
+    State.BlueTeamBan.name,
+    State.RedTeamBan.name,
+    State.BlueTeamBan.name,
+    State.RedTeamBan.name,
+    State.BlueTeamPick.name,
+    State.RedTeamPick.name,
+    State.RedTeamPick.name,
+    State.BlueTeamPick.name,
+    State.BlueTeamPick.name,
+    State.RedTeamPick.name,
+    State.RedTeamBan.name,
+    State.BlueTeamBan.name,
+    State.RedTeamBan.name,
+    State.BlueTeamBan.name,
+    State.RedTeamPick.name,
+    State.BlueTeamBan.name,
+    State.BlueTeamBan.name,
+    State.RedTeamPick.name,
+]
+
 STATE_RULES = {
     State.BlueTeamBan.name: {
         "action": "BanChampion",
@@ -34,7 +57,6 @@ STATE_RULES = {
         "captain": "redCaptain",
     },
 }
-
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
     global ALL_CONNECTIONS
@@ -57,6 +79,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
     if not lobby:
         send_message(connection_id, "No Lobby found")
         return {"statusCode": 404}
+
+    if "turn" not in lobby or lobby.get("state") not in STATE_SEQUENCE:
+        lobby["turn"] = 0
+        lobby["state"] = STATE_SEQUENCE[0]
 
     action = body["action"]
 
@@ -81,7 +107,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
         case "Sync":
             send_message(
                 connection_id,
-                json.dumps({"connectionId": connection_id, **lobby}),
+                json.dumps({"action": "Sync", "connectionId": connection_id, **lobby}),
             )
 
         case _:
@@ -118,6 +144,17 @@ def authorize_action(
     return True
 
 
+def advance_turn_and_state(lobby: Dict[str, Any]) -> None:
+    turn = int(lobby.get("turn", 0))
+    turn += 1
+    if turn >= len(STATE_SEQUENCE):
+        lobby["turn"] = len(STATE_SEQUENCE)
+        lobby["state"] = State.Waiting.name
+    else:
+        lobby["turn"] = turn
+        lobby["state"] = STATE_SEQUENCE[turn]
+
+
 def ban_champion(
     lobby: Dict[str, Any],
     champion_id: str,
@@ -125,13 +162,24 @@ def ban_champion(
 ) -> None:
     if not authorize_action(lobby, connection_id, "BanChampion"):
         return
-    if lobby["state"] == "BlueTeamBan":
-        lobby["state"] = State.RedTeamBan.name
-    elif lobby["state"] == "RedTeamBan":
-        lobby["state"] = State.BlueTeamBan.name
+    
+    lobby.setdefault("bans", [])
+    if champion_id in lobby["bans"]:
+        send_message(connection_id, "Champion already banned")
+        return
+
     lobby["bans"].append(champion_id)
-    message = json.dumps({"action": "BanChampion", "ChampionId": champion_id})
+
+    team = "Blue" if lobby["state"] == State.BlueTeamBan.name else "Red"
+
+    message = json.dumps({
+        "action": "BanChampion",
+        "ChampionId": champion_id,
+        "Team": team
+    })
     broadcast_message(ALL_CONNECTIONS, message)
+
+    advance_turn_and_state(lobby)
 
 
 def select_champion(
@@ -141,14 +189,32 @@ def select_champion(
 ) -> None:
     if not authorize_action(lobby, connection_id, "SelectChampion"):
         return
+
+    lobby.setdefault("blueTeamChampions", [])
+    lobby.setdefault("redTeamChampions", [])
+
+    if champion_id in lobby["blueTeamChampions"] or champion_id in lobby["redTeamChampions"]:
+        send_message(connection_id, "Champion already picked")
+        return
+
     if lobby["state"] == "BlueTeamPick":
-        lobby["state"] = State.RedTeamPick.name
         lobby["blueTeamChampions"].append(champion_id)
+        team = "Blue"
     elif lobby["state"] == "RedTeamPick":
-        lobby["state"] = State.BlueTeamPick.name
         lobby["redTeamChampions"].append(champion_id)
-    message = json.dumps({"action": "SelectChampion", "ChampionId": champion_id})
+        team = "Red"
+    else:
+        send_message(connection_id, "Pick not allowed in current state")
+        return
+
+    message = json.dumps({
+        "action": "SelectChampion",
+        "ChampionId": champion_id,
+        "Team": team
+    })
     broadcast_message(ALL_CONNECTIONS, message)
+
+    advance_turn_and_state(lobby)
 
 
 def send_message(connection_id: str, message: str) -> None:
@@ -170,7 +236,12 @@ def get_lobby(lobby_id: str) -> Tuple[dict, Dict[str, Any]]:
             Key={"lobbyId": {"S": f"LOBBY#{lobby_id}"}},
         )
 
-        item = response["Item"]
+        item = response.get("Item")
+        if not item:
+            return {}, {}
+
+        turn_raw = item.get("turn", {}).get("N")
+        turn = int(turn_raw) if turn_raw is not None else 0
 
         return (
             item,
@@ -183,6 +254,7 @@ def get_lobby(lobby_id: str) -> Tuple[dict, Dict[str, Any]]:
                 "bans": json.loads(item["bans"]["S"]),
                 "redTeamChampions": json.loads(item["redTeamChampions"]["S"]),
                 "blueTeamChampions": json.loads(item["blueTeamChampions"]["S"]),
+                "turn": turn,
             },
         )
 
@@ -204,5 +276,6 @@ def update_lobby(lobby: Dict[str, Any]) -> None:
             "bans": {"S": json.dumps(lobby["bans"])},
             "redTeamChampions": {"S": json.dumps(lobby["redTeamChampions"])},
             "blueTeamChampions": {"S": json.dumps(lobby["blueTeamChampions"])},
+            "turn": {"N": str(int(lobby.get("turn", 0)))},
         },
     )
