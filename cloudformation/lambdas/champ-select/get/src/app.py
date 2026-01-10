@@ -6,18 +6,14 @@ ddb_client = boto3.client("dynamodb")
 
 
 def lambda_handler(event, context):
-    try:
-        table_name = os.environ["TABLE_NAME"]
+    table_name = os.environ["TABLE_NAME"]
 
-        scan_result = ddb_client.scan(TableName=table_name)
+    scan_result = ddb_client.scan(TableName=table_name)
 
-        lobbies = [deserialize_item(item) for item in scan_result.get("Items", [])]
+    lobbies = [deserialize_item(item) for item in scan_result.get("Items", [])]
 
-        return response(200, {"lobbies": lobbies})
+    return response(200, {"lobbies": lobbies})
 
-    except Exception as e:
-        print(f"Error fetching lobbies: {e}")
-        return response(500, {"error": "Internal server error"})
 
 
 def deserialize_item(item):
@@ -26,13 +22,22 @@ def deserialize_item(item):
         dtype, dval = next(iter(value.items()))
 
         if dtype == "S":
+            if (dval.startswith("[") and dval.endswith("]")) or (dval.startswith("{") and dval.endswith("}")): 
+                try: 
+                    out[key] = json.loads(dval) 
+                    continue 
+                except json.JSONDecodeError: 
+                    pass 
+
             out[key] = dval
+
         elif dtype == "N":
             out[key] = int(dval)
         else:
             out[key] = dval
 
     return out
+
 
 
 def response(status_code, body):
