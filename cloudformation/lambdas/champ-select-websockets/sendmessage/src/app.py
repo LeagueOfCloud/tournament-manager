@@ -34,8 +34,8 @@ STATE_SEQUENCE = [
     State.RedTeamBan.name,
     State.BlueTeamBan.name,
     State.RedTeamPick.name,
-    State.BlueTeamBan.name,
-    State.BlueTeamBan.name,
+    State.BlueTeamPick.name,
+    State.BlueTeamPick.name,
     State.RedTeamPick.name,
 ]
 
@@ -57,6 +57,7 @@ STATE_RULES = {
         "captain": "redCaptain",
     },
 }
+
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
     global ALL_CONNECTIONS
@@ -162,9 +163,13 @@ def ban_champion(
 ) -> None:
     if not authorize_action(lobby, connection_id, "BanChampion"):
         return
-    
+
     lobby.setdefault("bans", [])
-    if champion_id in lobby["bans"] or champion_id in lobby.get("blueTeamChampions", []) or champion_id in lobby.get("redTeamChampions", []):
+    if (
+        champion_id in lobby["bans"]
+        or champion_id in lobby.get("blueTeamChampions", [])
+        or champion_id in lobby.get("redTeamChampions", [])
+    ):
         send_message(connection_id, "Champion already banned")
         return
 
@@ -172,11 +177,9 @@ def ban_champion(
 
     team = "Blue" if lobby["state"] == State.BlueTeamBan.name else "Red"
 
-    message = json.dumps({
-        "action": "BanChampion",
-        "ChampionId": champion_id,
-        "Team": team
-    })
+    message = json.dumps(
+        {"action": "BanChampion", "ChampionId": champion_id, "Team": team}
+    )
     broadcast_message(ALL_CONNECTIONS, message)
 
     advance_turn_and_state(lobby)
@@ -193,7 +196,11 @@ def select_champion(
     lobby.setdefault("blueTeamChampions", [])
     lobby.setdefault("redTeamChampions", [])
 
-    if champion_id in lobby["bans"] or champion_id in lobby.get("blueTeamChampions", []) or champion_id in lobby.get("redTeamChampions", []):
+    if (
+        champion_id in lobby["bans"]
+        or champion_id in lobby.get("blueTeamChampions", [])
+        or champion_id in lobby.get("redTeamChampions", [])
+    ):
         send_message(connection_id, "Champion already banned")
         return
 
@@ -207,11 +214,9 @@ def select_champion(
         send_message(connection_id, "Pick not allowed in current state")
         return
 
-    message = json.dumps({
-        "action": "SelectChampion",
-        "ChampionId": champion_id,
-        "Team": team
-    })
+    message = json.dumps(
+        {"action": "SelectChampion", "ChampionId": champion_id, "Team": team}
+    )
     broadcast_message(ALL_CONNECTIONS, message)
 
     advance_turn_and_state(lobby)
