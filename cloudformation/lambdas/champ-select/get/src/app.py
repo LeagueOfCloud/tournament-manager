@@ -30,7 +30,7 @@ def deserialize_item(item):
         elif dtype == "N":
             out[key] = int(dval)
         else:
-            out[key] = dval  # fallback
+            out[key] = dval
 
     return out
 

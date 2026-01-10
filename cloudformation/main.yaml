@@ -658,6 +658,7 @@ Resources:
   ###########################################################
   # SCHEDULE LAMBDAS                                        #
   ###########################################################
+  
   GetScheduleMatchLambda:
     Type: AWS::Serverless::Function
     Properties:
