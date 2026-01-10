@@ -24,6 +24,7 @@ PATH_PERMISSIONS = {
     "PUT /dream-draft": ["admin", "user"],
     "POST /tournament/create-lobby/{id}": "admin",
     "POST /champ-select-lobby": "admin",
+    "GET /champ-select-lobby}": "admin"
 }
 
 
