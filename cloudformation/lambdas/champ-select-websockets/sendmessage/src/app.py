@@ -108,11 +108,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
         case "Sync":
             send_message(
                 connection_id,
-                json.dumps({
-                    "action": "Sync",
-                    "connectionId": connection_id,
-                    **lobby
-                }),
+                json.dumps({"action": "Sync", "connectionId": connection_id, **lobby}),
             )
 
         case _:
@@ -167,7 +163,7 @@ def ban_champion(
 ) -> None:
     if not authorize_action(lobby, connection_id, "BanChampion"):
         return
-    
+
     lobby.setdefault("blueTeamBans", [])
     lobby.setdefault("redTeamBans", [])
 
@@ -187,11 +183,13 @@ def ban_champion(
     else:
         lobby["redTeamBans"].append(champion_id)
 
-    message = json.dumps({
-        "action": "BanChampion",
-        "ChampionId": champion_id,
-        "Team": team,
-    })
+    message = json.dumps(
+        {
+            "action": "BanChampion",
+            "ChampionId": champion_id,
+            "Team": team,
+        }
+    )
     broadcast_message(ALL_CONNECTIONS, message)
 
     advance_turn_and_state(lobby)
@@ -227,11 +225,13 @@ def select_champion(
         send_message(connection_id, "Pick not allowed in current state")
         return
 
-    message = json.dumps({
-        "action": "SelectChampion",
-        "ChampionId": champion_id,
-        "Team": team,
-    })
+    message = json.dumps(
+        {
+            "action": "SelectChampion",
+            "ChampionId": champion_id,
+            "Team": team,
+        }
+    )
     broadcast_message(ALL_CONNECTIONS, message)
 
     advance_turn_and_state(lobby)
@@ -277,6 +277,7 @@ def get_lobby(lobby_id: str) -> Tuple[dict, Dict[str, Any]]:
                 "redTeamChampions": json.loads(item["redTeamChampions"]["S"]),
                 "blueTeamChampions": json.loads(item["blueTeamChampions"]["S"]),
                 "turn": turn,
+                "TTL": item.get("TTL", {}).get("N"),
             },
         )
 
@@ -301,5 +302,6 @@ def update_lobby(lobby: Dict[str, Any]) -> None:
             "redTeamChampions": {"S": json.dumps(lobby["redTeamChampions"])},
             "blueTeamChampions": {"S": json.dumps(lobby["blueTeamChampions"])},
             "turn": {"N": str(int(lobby.get("turn", 0)))},
+            "TTL": {"N": str(int(lobby.get("TTL", 0)))},
         },
     )
