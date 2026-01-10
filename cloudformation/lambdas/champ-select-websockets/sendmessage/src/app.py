@@ -108,7 +108,11 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
         case "Sync":
             send_message(
                 connection_id,
-                json.dumps({"action": "Sync", "connectionId": connection_id, **lobby}),
+                json.dumps({
+                    "action": "Sync",
+                    "connectionId": connection_id,
+                    **lobby
+                }),
             )
 
         case _:
@@ -163,23 +167,31 @@ def ban_champion(
 ) -> None:
     if not authorize_action(lobby, connection_id, "BanChampion"):
         return
+    
+    lobby.setdefault("blueTeamBans", [])
+    lobby.setdefault("redTeamBans", [])
 
-    lobby.setdefault("bans", [])
     if (
-        champion_id in lobby["bans"]
+        champion_id in lobby["blueTeamBans"]
+        or champion_id in lobby["redTeamBans"]
         or champion_id in lobby.get("blueTeamChampions", [])
         or champion_id in lobby.get("redTeamChampions", [])
     ):
-        send_message(connection_id, "Champion already banned")
+        send_message(connection_id, "Champion already picked")
         return
-
-    lobby["bans"].append(champion_id)
 
     team = "Blue" if lobby["state"] == State.BlueTeamBan.name else "Red"
 
-    message = json.dumps(
-        {"action": "BanChampion", "ChampionId": champion_id, "Team": team}
-    )
+    if team == "Blue":
+        lobby["blueTeamBans"].append(champion_id)
+    else:
+        lobby["redTeamBans"].append(champion_id)
+
+    message = json.dumps({
+        "action": "BanChampion",
+        "ChampionId": champion_id,
+        "Team": team,
+    })
     broadcast_message(ALL_CONNECTIONS, message)
 
     advance_turn_and_state(lobby)
@@ -197,9 +209,10 @@ def select_champion(
     lobby.setdefault("redTeamChampions", [])
 
     if (
-        champion_id in lobby["bans"]
-        or champion_id in lobby.get("blueTeamChampions", [])
+        champion_id in lobby.get("blueTeamChampions", [])
         or champion_id in lobby.get("redTeamChampions", [])
+        or champion_id in lobby.get("blueTeamBans", [])
+        or champion_id in lobby.get("redTeamBans", [])
     ):
         send_message(connection_id, "Champion already banned")
         return
@@ -214,9 +227,11 @@ def select_champion(
         send_message(connection_id, "Pick not allowed in current state")
         return
 
-    message = json.dumps(
-        {"action": "SelectChampion", "ChampionId": champion_id, "Team": team}
-    )
+    message = json.dumps({
+        "action": "SelectChampion",
+        "ChampionId": champion_id,
+        "Team": team,
+    })
     broadcast_message(ALL_CONNECTIONS, message)
 
     advance_turn_and_state(lobby)
@@ -256,7 +271,9 @@ def get_lobby(lobby_id: str) -> Tuple[dict, Dict[str, Any]]:
                 "redCaptain": item.get("redCaptain", {}).get("S"),
                 "spectators": json.loads(item["spectators"]["S"]),
                 "state": item.get("state", {}).get("S"),
-                "bans": json.loads(item["bans"]["S"]),
+                "preBans": json.loads(item["preBans"]["S"]),
+                "blueTeamBans": json.loads(item.get("blueTeamBans", {}).get("S", "[]")),
+                "redTeamBans": json.loads(item.get("redTeamBans", {}).get("S", "[]")),
                 "redTeamChampions": json.loads(item["redTeamChampions"]["S"]),
                 "blueTeamChampions": json.loads(item["blueTeamChampions"]["S"]),
                 "turn": turn,
@@ -278,7 +295,9 @@ def update_lobby(lobby: Dict[str, Any]) -> None:
             "redCaptain": {"S": lobby["redCaptain"]},
             "spectators": {"S": json.dumps(lobby["spectators"])},
             "state": {"S": lobby["state"]},
-            "bans": {"S": json.dumps(lobby["bans"])},
+            "preBans": {"S": json.dumps(lobby["preBans"])},
+            "blueTeamBans": {"S": json.dumps(lobby.get("blueTeamBans", []))},
+            "redTeamBans": {"S": json.dumps(lobby.get("redTeamBans", []))},
             "redTeamChampions": {"S": json.dumps(lobby["redTeamChampions"])},
             "blueTeamChampions": {"S": json.dumps(lobby["blueTeamChampions"])},
             "turn": {"N": str(int(lobby.get("turn", 0)))},
