@@ -102,7 +102,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
             select_champion(lobby, body["ChampionId"], connection_id)
 
         case "Start":
-            if connection_id in [lobby["blueCaptain"], lobby["redCaptain"]]:
+            if (
+                connection_id in [lobby["blueCaptain"], lobby["redCaptain"]]
+                and lobby["state"] == State.Waiting.name
+            ):
                 broadcast_message(ALL_CONNECTIONS, json.dumps({"action": "Start"}))
                 advance_turn_and_state(lobby)
             else:
