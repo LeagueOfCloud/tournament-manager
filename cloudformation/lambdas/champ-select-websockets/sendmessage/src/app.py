@@ -14,6 +14,7 @@ class State(Enum):
     RedTeamBan = 3
     BlueTeamPick = 4
     RedTeamPick = 5
+    Finished = 6
 
 
 STATE_SEQUENCE = [
@@ -165,7 +166,7 @@ def advance_turn_and_state(lobby: Dict[str, Any]) -> None:
     turn += 1
     if turn >= len(STATE_SEQUENCE):
         lobby["turn"] = len(STATE_SEQUENCE)
-        lobby["state"] = State.Waiting.name
+        lobby["state"] = State.Finished.name
     else:
         lobby["turn"] = turn
         lobby["state"] = STATE_SEQUENCE[turn]
