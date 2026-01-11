@@ -12,6 +12,7 @@ SELECT_BANNEDCHAMP_SQL = """
     SELECT value FROM config WHERE name = "banned_champions"
 """
 
+
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
         host=os.environ["DB_HOST"],
@@ -19,7 +20,7 @@ def create_connection() -> pymysql.Connection:
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASSWORD"],
         database=os.environ["DB_NAME"],
-        cursorclass=pymysql.cursors.DictCursor
+        cursorclass=pymysql.cursors.DictCursor,
     )
 
 
@@ -41,10 +42,10 @@ def lambda_handler(event, context):
             "redCaptain": {"S": ""},
             "blueCaptain": {"S": ""},
             "spectators": {"S": "[]"},
-            "state": {"S": "WAITING"},
+            "state": {"S": "Waiting"},
             "preBans": {"S": row["value"] if row else "[]"},
             "blueTeamBans": {"S": "[]"},
-            "redTeamBans": {"S": "[]"}, 
+            "redTeamBans": {"S": "[]"},
             "redTeamChampions": {"S": "[]"},
             "blueTeamChampions": {"S": "[]"},
             "TTL": {"N": str(round((datetime.now() + timedelta(days=1)).timestamp()))},
@@ -53,7 +54,7 @@ def lambda_handler(event, context):
         put_item(table_name=os.environ["TABLE_NAME"], item=item)
 
         return response(200, {"lobbyId": lobby_guid})
-    
+
     except Exception as e:
         print(f"Error creating lobby: {e}")
         return response(500, {"error": "Internal server error"})

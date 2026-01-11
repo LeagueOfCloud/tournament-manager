@@ -17,6 +17,7 @@ class State(Enum):
 
 
 STATE_SEQUENCE = [
+    State.Waiting.name,
     State.BlueTeamBan.name,
     State.RedTeamBan.name,
     State.BlueTeamBan.name,
@@ -105,11 +106,26 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, int]:
             else:
                 send_message(connection_id, "Only captains can start the match")
 
+            advance_turn_and_state(lobby)
+
         case "Sync":
             send_message(
                 connection_id,
                 json.dumps({"action": "Sync", "connectionId": connection_id, **lobby}),
             )
+
+        case "Hover":
+            if (
+                connection_id == lobby["blueCaptain"]
+                and lobby["state"].startswith("BlueTeam")
+            ) or (
+                connection_id == lobby["redCaptain"]
+                and lobby["state"].startswith("RedTeam")
+            ):
+                broadcast_message(
+                    ALL_CONNECTIONS,
+                    json.dumps({"action": "Hover", "ChampionId": body["ChampionId"]}),
+                )
 
         case _:
             send_message(connection_id, "Invalid Action")
