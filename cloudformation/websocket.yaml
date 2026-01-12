@@ -155,7 +155,15 @@ Resources:
       AuthorizationType: NONE
       Target: !Sub integrations/${SendMessageIntegration}
 
-  WebSocketDeployment1:
+  HoverRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref WebSocketApi
+      RouteKey: "Hover"
+      AuthorizationType: NONE
+      Target: !Sub integrations/${SendMessageIntegration}
+
+  WebSocketDeployment2:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
       - ConnectRoute
@@ -164,6 +172,7 @@ Resources:
       - SelectChampionRoute
       - StartRoute
       - SyncRoute
+      - HoverRoute
     Properties:
       ApiId: !Ref WebSocketApi
 
@@ -172,7 +181,7 @@ Resources:
     Properties:
       StageName: prod
       ApiId: !Ref WebSocketApi
-      DeploymentId: !Ref WebSocketDeployment1
+      DeploymentId: !Ref WebSocketDeployment2
 
   ConnectLambdaPermission:
     Type: AWS::Lambda::Permission
