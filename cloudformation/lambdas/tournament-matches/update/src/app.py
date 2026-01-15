@@ -48,6 +48,7 @@ def lambda_handler(event, context):
     team_2_id = int(match_data.get("team_2_id"))
     start_date = int(match_data.get("date"))
     start_date_date = datetime.fromtimestamp(start_date/1000)
+    vod_url = match_data.get("vod_url")
 
     if start_date_date < datetime.now():
         return {
@@ -65,8 +66,8 @@ def lambda_handler(event, context):
 
         with connection.cursor() as cursor:
             rows_affected = cursor.execute(
-                "UPDATE tournament_matches SET team_1_id=%s, team_2_id=%s, start_date=%s WHERE id=%s",
-                (team_1_id, team_2_id, start_date_date, id)
+                "UPDATE tournament_matches SET team_1_id=%s, team_2_id=%s, start_date=%s, vod_url=%s WHERE id=%s",
+                (team_1_id, team_2_id, start_date_date, vod_url, id)
             )
             connection.commit()
 
