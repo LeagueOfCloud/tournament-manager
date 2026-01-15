@@ -41,6 +41,13 @@ Resources:
         FetchPlayerStatsLambdaArn: !GetAtt FetchPlayerStatsLambda.Arn
         ProcessMatchDataLambdaArn: !GetAtt ProcessMatchDataLambda.Arn
         RestartDBInstanceId: !Ref RestartDBInstanceId
+  
+  Websockets:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./websocket.yaml
+      Parameters:
+        ConnectionsTable: !GetAtt ConnectionsTable.Arn
 
 
   ###########################################################
@@ -95,6 +102,15 @@ Resources:
                   Resource:
                     - !Sub arn:aws:s3:::${S3AssetsBucket}
                     - !Sub arn:aws:s3:::${S3AssetsBucket}/*
+          - PolicyName: DynamoDBAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:*
+                  Resource:
+                    - !GetAtt ConnectionsTable.Arn
 
   ApiAuthenticatorLambda:
     Type: AWS::Serverless::Function
@@ -102,6 +118,28 @@ Resources:
       CodeUri: lambdas/api-authenticator/src/
       Handler: app.lambda_handler
       Timeout: 30
+
+  ###########################################################
+  # DynamoDB                                                #
+  ###########################################################
+
+  ConnectionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TimeToLiveSpecification:
+        AttributeName: TTL
+        Enabled: true
+      KeySchema:
+        - AttributeName: lobbyId
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: lobbyId
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
 
   ###########################################################
   # PLAYER LAMBDAS                                          #
@@ -584,7 +622,7 @@ Resources:
             RestApiId: !Ref Api
 
   ###########################################################
-  # TOURNAMENT LAMBDAS                                     #
+  # TOURNAMENT LAMBDAS                                      #
   ###########################################################
 
   TournamentCreateLobbyLambda:
@@ -618,8 +656,9 @@ Resources:
             RestApiId: !Ref Api
 
   ###########################################################
-  # SCHEDULE LAMBDAS                                     #
+  # SCHEDULE LAMBDAS                                        #
   ###########################################################
+  
   GetScheduleMatchLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -651,3 +690,43 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
+
+  ###########################################################
+  # CHAMP SELECT LAMBDAS                                    #
+  ###########################################################
+
+  ChampSelectLobbyCreateLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      CodeUri: lambdas/champ-select/post/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /champ-select-lobby
+            Method: POST
+            RestApiId: !Ref Api
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ConnectionsTable
+  
+  ChampSelectLobbyGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      CodeUri: lambdas/champ-select/get/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /champ-select-lobby
+            Method: GET
+            RestApiId: !Ref Api
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ConnectionsTable
