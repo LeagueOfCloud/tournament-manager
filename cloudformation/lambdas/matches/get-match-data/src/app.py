@@ -81,7 +81,8 @@ def update_match_data(match_id, match_data):
 
 def close_connection():
     connection = get_connection()
-    connection.close()
+    if connection:
+        connection.close()
     connection = None
 
 
@@ -97,6 +98,7 @@ def lambda_handler(event, context):
             logger.error(
                 f"Error fetching match_data for Match ID: {match_id}, error: {str(e)}"
             )
+            close_connection()
             return {
                 "statusCode": 500,
                 "headers": {
@@ -104,6 +106,8 @@ def lambda_handler(event, context):
                     "Access-Control-Allow-Origin": "*",
                 },
             }
+
+    close_connection()
 
     return {
         "statusCode": 200,

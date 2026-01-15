@@ -20,13 +20,11 @@ def get_player_puuid(summoner_name: str, region: str = "europe") -> str:
 
     headers = {"X-Riot-Token": api_key}
 
-    
-
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
         puuid = response.json().get("puuid")
-        
+
         return puuid
 
     raise Exception(
@@ -40,7 +38,7 @@ def validate_account_data(account_data) -> bool:
 
     try:
         int(account_data.get("player_id", ""))
-        
+
         if not isinstance(account_data.get("is_primary"), bool):
             raise TypeError
     except (ValueError, TypeError):
@@ -64,15 +62,13 @@ def lambda_handler(event, context):
     request_id = context.aws_request_id
     account_data = json.loads(event["body"])
 
-    
-
     if not validate_account_data(account_data):
-        
+
         return {
             "statusCode": 400,
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+                "Access-Control-Allow-Origin": "*",
             },
         }
 
@@ -95,19 +91,20 @@ def lambda_handler(event, context):
     connection = None
 
     try:
-
-        
-
         connection = create_connection()
 
         with connection.cursor() as cursor:
             cursor.execute(
-                INSERT_ACCOUNT_SQL, (account_name, account_puuid, player_id, "true" if is_primary else "false")
+                INSERT_ACCOUNT_SQL,
+                (
+                    account_name,
+                    account_puuid,
+                    player_id,
+                    "true" if is_primary else "false",
+                ),
             )
             connection.commit()
             insert_id = cursor.lastrowid
-
-        
 
         return {
             "statusCode": 200,
@@ -119,12 +116,12 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
-        
+
         return {
             "statusCode": 500,
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+                "Access-Control-Allow-Origin": "*",
             },
             "body": json.dumps(f"Failed to create riot account, Error: {str(e)}"),
         }

@@ -2,6 +2,7 @@ import pymysql
 import json
 import os
 
+
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
         host=os.environ["DB_HOST"],
@@ -34,7 +35,7 @@ def lambda_handler(event, context):
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT id, account_name, account_puuid, player_id, is_primary FROM riot_accounts WHERE player_id = %s",
-                (player_id)
+                (player_id),
             )
 
             accounts = cursor.fetchall()
@@ -57,3 +58,6 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({"message": f"{e}"}),
         }
+    finally:
+        if connection:
+            connection.close()

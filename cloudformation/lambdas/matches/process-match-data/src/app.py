@@ -54,6 +54,7 @@ UPSERT_PROCESSED_MATCH_DATA_SQL = """
         teamPosition = VALUES(teamPosition);
 """
 
+
 def get_connection() -> pymysql.Connection:
     global connection
     if connection is None:
@@ -63,14 +64,17 @@ def get_connection() -> pymysql.Connection:
             user=os.environ["DB_USER"],
             password=os.environ["DB_PASSWORD"],
             database=os.environ["DB_NAME"],
-            cursorclass=pymysql.cursors.DictCursor
+            cursorclass=pymysql.cursors.DictCursor,
         )
     return connection
 
+
 def close_connection():
     connection = get_connection()
-    connection.close()
+    if connection:
+        connection.close()
     connection = None
+
 
 def ensure_json(data):
     if data is None:
@@ -82,11 +86,13 @@ def ensure_json(data):
     except Exception:
         return None
 
+
 def fetch_unprocessed_matches(conn: pymysql.Connection) -> List[Dict[str, Any]]:
     with conn.cursor() as cur:
         cur.execute(GET_MATCH_IDS_SQL)
         return cur.fetchall()
-    
+
+
 def get_known_puuids(conn: pymysql.Connection, candidate_puuids: List[str]) -> Set[str]:
     if not candidate_puuids:
         return set()
@@ -97,21 +103,26 @@ def get_known_puuids(conn: pymysql.Connection, candidate_puuids: List[str]) -> S
         rows = cur.fetchall()
     return {r["account_puuid"] for r in rows}
 
+
 def insert_participant_rows(conn: pymysql.Connection, rows: List[Tuple]):
     if not rows:
         return
     with conn.cursor() as cur:
         cur.executemany(UPSERT_PROCESSED_MATCH_DATA_SQL, rows)
 
+
 def mark_match_processed(conn: pymysql.Connection, match_id: str):
     with conn.cursor() as cur:
         cur.execute(MARK_MATCH_PROCESSED_SQL, (match_id,))
 
-def extract_rows_for_known_puuids(match_id: str, payload: Dict[str, Any], known_puuids: Set[str]) -> List[Tuple]:
+
+def extract_rows_for_known_puuids(
+    match_id: str, payload: Dict[str, Any], known_puuids: Set[str]
+) -> List[Tuple]:
     info = (payload or {}).get("info", {})
     queue_id = info.get("queueId")
     game_duration = info.get("gameDuration")
-    if game_duration < 60*10:
+    if game_duration < 60 * 10:
         return []  # skip remade games
     participants = info.get("participants", []) or []
 
@@ -145,28 +156,49 @@ def extract_rows_for_known_puuids(match_id: str, payload: Dict[str, Any], known_
 
         win = str(p.get("win"))
 
-        rows.append((
-            match_id, puuid, account_name, champion_name, team_position,
-            gold, dmg, dmg_taken, heal, mitigated_dmg, dmg_turret, cc, total_cs, kills,
-            deaths, assists, vision_score, obj_stolen, win, queue_id, game_duration
-        ))
+        rows.append(
+            (
+                match_id,
+                puuid,
+                account_name,
+                champion_name,
+                team_position,
+                gold,
+                dmg,
+                dmg_taken,
+                heal,
+                mitigated_dmg,
+                dmg_turret,
+                cc,
+                total_cs,
+                kills,
+                deaths,
+                assists,
+                vision_score,
+                obj_stolen,
+                win,
+                queue_id,
+                game_duration,
+            )
+        )
 
     return rows
+
 
 def lambda_handler(event, context):
     processed_matches = 0
     inserted_rows = 0
     connection = get_connection()
-    
-    try: 
+
+    try:
         matches = fetch_unprocessed_matches(connection)
         if not matches:
             logger.info("No unprocessed matches found.")
             return {
                 "statusCode": 200,
                 "headers": {
-                    "Content-Type": "application/json", 
-                    "Access-Control-Allow-Origin": "*"
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
                 },
             }
 
@@ -176,7 +208,9 @@ def lambda_handler(event, context):
             payload = ensure_json(raw)
             if not payload:
                 logger.warning(f"Skipping match {match_id}: invalid JSON payload.")
-                mark_match_processed(connection, match_id)  # prevent infinite loop on bad row
+                mark_match_processed(
+                    connection, match_id
+                )  # prevent infinite loop on bad row
                 continue
 
             participants = (payload.get("info", {}) or {}).get("participants", []) or []
@@ -184,7 +218,9 @@ def lambda_handler(event, context):
 
             known = get_known_puuids(connection, candidate_puuids)
             if not known:
-                logger.info(f"Match {match_id}: no known PUUIDs found; marking processed.")
+                logger.info(
+                    f"Match {match_id}: no known PUUIDs found; marking processed."
+                )
                 mark_match_processed(connection, match_id)
                 continue
 
@@ -197,25 +233,35 @@ def lambda_handler(event, context):
             processed_matches += 1
 
         connection.commit()
-        
+
     except Exception as e:
         connection.rollback()
         logger.exception("Error while processing matches.")
         return {
             "statusCode": 500,
             "headers": {
-                "Content-Type": "application/json", 
-                "Access-Control-Allow-Origin": "*"
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
             },
-            "body": json.dumps({"message": "Error processing matches.", "error": str(e)})
+            "body": json.dumps(
+                {"message": "Error processing matches.", "error": str(e)}
+            ),
         }
 
+    finally:
+        close_connection()
+
     return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"},
-            "body": json.dumps({
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+        },
+        "body": json.dumps(
+            {
                 "message": "Processed matches successfully.",
                 "matches_processed": processed_matches,
-                "rows_upserted": inserted_rows
-            })
+                "rows_upserted": inserted_rows,
+            }
+        ),
     }

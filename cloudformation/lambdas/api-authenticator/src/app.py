@@ -82,6 +82,8 @@ def lambda_handler(event, context):
             cursor.execute("SELECT * FROM profiles WHERE token = %s", (TOKEN))
             result = cursor.fetchone()
 
+        connection.close()
+
         if result == None:
             return generatePolicy("null", "Deny", "Invalid token provided")
 

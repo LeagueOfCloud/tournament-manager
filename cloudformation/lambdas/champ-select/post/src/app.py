@@ -37,6 +37,8 @@ def lambda_handler(event, context):
             cursor.execute(SELECT_BANNEDCHAMP_SQL)
             row = cursor.fetchone()
 
+        connection.close()
+
         item = {
             "lobbyId": {"S": lobby_id},
             "redCaptain": {"S": ""},
