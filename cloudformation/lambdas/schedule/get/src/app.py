@@ -37,7 +37,8 @@ SELECT
     t2.name     AS team_2_name,
     t2.logo_url AS team_2_logo,
     t2.tag      AS team_2_tag,
-    tm.start_date
+    tm.start_date,
+    tm.vod_url
 FROM tournament_matches tm
 JOIN teams t1 ON tm.team_1_id = t1.id
 JOIN teams t2 ON tm.team_2_id = t2.id
