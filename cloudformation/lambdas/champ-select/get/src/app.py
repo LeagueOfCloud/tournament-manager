@@ -15,19 +15,20 @@ def lambda_handler(event, context):
     return response(200, {"lobbies": lobbies})
 
 
-
 def deserialize_item(item):
     out = {}
     for key, value in item.items():
         dtype, dval = next(iter(value.items()))
 
         if dtype == "S":
-            if (dval.startswith("[") and dval.endswith("]")) or (dval.startswith("{") and dval.endswith("}")): 
-                try: 
-                    out[key] = json.loads(dval) 
-                    continue 
-                except json.JSONDecodeError: 
-                    pass 
+            if (dval.startswith("[") and dval.endswith("]")) or (
+                dval.startswith("{") and dval.endswith("}")
+            ):
+                try:
+                    out[key] = json.loads(dval)
+                    continue
+                except json.JSONDecodeError:
+                    pass
 
             out[key] = dval
 
@@ -37,7 +38,6 @@ def deserialize_item(item):
             out[key] = dval
 
     return out
-
 
 
 def response(status_code, body):

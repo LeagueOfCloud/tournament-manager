@@ -77,3 +77,7 @@ def lambda_handler(event, context):
 
     except Exception as e:
         return response(500, {"message": f"{e}", "tracebakc": traceback.format_exc(e)})
+
+    finally:
+        if connection:
+            connection.close()

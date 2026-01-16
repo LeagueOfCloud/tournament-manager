@@ -32,11 +32,14 @@ def lambda_handler(event, context):
         cur.execute(SELECT_PLAYERS_SQL)
         rows = cur.fetchall()
 
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
-            "body": json.dumps({"items": rows, "count": len(rows)}),
-        }
+    if conn:
+        conn.close()
+
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+        },
+        "body": json.dumps({"items": rows, "count": len(rows)}),
+    }

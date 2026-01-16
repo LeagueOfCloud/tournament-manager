@@ -35,6 +35,7 @@ UPDATE_LAST_MASTERY_FETCH_SQL = """
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
         host=os.environ["DB_HOST"],
@@ -42,8 +43,9 @@ def create_connection() -> pymysql.Connection:
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASSWORD"],
         database=os.environ["DB_NAME"],
-        cursorclass=pymysql.cursors.DictCursor
+        cursorclass=pymysql.cursors.DictCursor,
     )
+
 
 def fetch_puuids() -> list[str]:
     connection = None
@@ -52,19 +54,21 @@ def fetch_puuids() -> list[str]:
         with connection.cursor() as cursor:
             cursor.execute(GET_PLAYER_UUIDS_SQL)
             results = cursor.fetchall()
-            puuids = [row['account_puuid'] for row in results]
+            puuids = [row["account_puuid"] for row in results]
             logger.info(f"Fetched {len(puuids)} PUUIDs from database.")
             return puuids
-    except Exception as e: 
+    except Exception as e:
         logger.error(f"Error fetching PUUIDs: {str(e)}")
         return []
     finally:
         if connection:
             connection.close()
-    
+
+
 def update_mastery_timestamp(connection, puuid):
     with connection.cursor() as cursor:
         cursor.execute(UPDATE_LAST_MASTERY_FETCH_SQL, (datetime.now(), puuid))
+
 
 def fetch_champion_mastery_from_riot(puuid: str) -> list[dict] | None:
     url = (
@@ -88,12 +92,14 @@ def fetch_champion_mastery_from_riot(puuid: str) -> list[dict] | None:
     resp.raise_for_status()
     return resp.json()
 
+
 def save_mastery_json(connection, puuid: str, mastery_json: list[dict]):
     with connection.cursor() as cursor:
         cursor.execute(
             INSERT_OR_UPDATE_MASTERY_SQL,
             (puuid, json.dumps(mastery_json)),
         )
+
 
 def lambda_handler(event, context):
     puuids = fetch_puuids()
@@ -106,7 +112,7 @@ def lambda_handler(event, context):
             },
             "body": json.dumps({"message": "No PUUIDs to process."}),
         }
-    
+
     connection = create_connection()
     processed_accounts = 0
 
@@ -146,7 +152,7 @@ def lambda_handler(event, context):
         }
     finally:
         connection.close()
-    
+
     return {
         "statusCode": 201,
         "headers": {

@@ -8,7 +8,9 @@ from datetime import datetime
 RIOT_API_KEY = os.environ["RIOT_API_KEY"]
 region = "EUW1"
 connection = None
-league_entries_url = f"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid"
+league_entries_url = (
+    f"https://{region}.api.riotgames.com/lol/league/v4/entries/by-puuid"
+)
 logger = logging.getLogger()
 
 GET_PLAYER_UUIDS_SQL = """
@@ -33,17 +35,19 @@ UPDATE_LAST_PLAYER_STATS_FETCH_SQL = """
     WHERE account_puuid = %s
 """
 
+
 def fetch_puuids() -> list:
     try:
         connection = get_connection()
         with connection.cursor() as cursor:
             cursor.execute(GET_PLAYER_UUIDS_SQL)
             results = cursor.fetchall()
-            puuids = [row['account_puuid'] for row in results]
+            puuids = [row["account_puuid"] for row in results]
             return puuids
-    except Exception as e: 
+    except Exception as e:
         logger.error(f"Error fetching PUUIDs: {str(e)}")
         return []
+
 
 def get_connection() -> pymysql.Connection:
     global connection
@@ -54,9 +58,10 @@ def get_connection() -> pymysql.Connection:
             user=os.environ["DB_USER"],
             password=os.environ["DB_PASSWORD"],
             database=os.environ["DB_NAME"],
-            cursorclass=pymysql.cursors.DictCursor
+            cursorclass=pymysql.cursors.DictCursor,
         )
     return connection
+
 
 def fetch_league_entries(puuid):
     url = f"{league_entries_url}/{puuid}"
@@ -68,6 +73,7 @@ def fetch_league_entries(puuid):
     response.raise_for_status()
     return response.json()
 
+
 def save_player_stats(puuid, league_entries):
     connection = get_connection()
     league_entries_json = json.dumps(league_entries)
@@ -76,8 +82,9 @@ def save_player_stats(puuid, league_entries):
             cursor.execute(UPSERT_PLAYER_STATS_SQL, (puuid, league_entries_json))
             cursor.execute(UPDATE_LAST_PLAYER_STATS_FETCH_SQL, (datetime.now(), puuid))
         connection.commit()
-    except Exception as e: 
+    except Exception as e:
         logger.error(f"Error fetching match_ids: {str(e)}")
+
 
 def lambda_handler(event, context):
     puuids = fetch_puuids()
@@ -86,19 +93,28 @@ def lambda_handler(event, context):
             league_entries = fetch_league_entries(puuid)
             save_player_stats(puuid, league_entries)
         except Exception as e:
-            logger.error(f"Error fetching league_entries for puuid: {puuid}, error: {str(e)}")
+            logger.error(
+                f"Error fetching league_entries for puuid: {puuid}, error: {str(e)}"
+            )
+
+            if connection:
+                connection.close()
+
             return {
                 "statusCode": 500,
                 "headers": {
                     "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*"
+                    "Access-Control-Allow-Origin": "*",
                 },
             }
+
+    if connection:
+        connection.close()
 
     return {
         "statusCode": 201,
         "headers": {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-        },    
+            "Access-Control-Allow-Origin": "*",
+        },
     }

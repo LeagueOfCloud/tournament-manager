@@ -95,3 +95,6 @@ def lambda_handler(event, context):
                 "error": f"{e}",
             },
         )
+    finally:
+        if connection:
+            connection.close()
