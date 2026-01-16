@@ -5,6 +5,7 @@ import boto3
 import pymysql
 from datetime import datetime
 
+
 def create_connection() -> pymysql.Connection:
     return pymysql.connect(
         host=os.environ["DB_HOST"],
@@ -12,8 +13,9 @@ def create_connection() -> pymysql.Connection:
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASSWORD"],
         database=os.environ["DB_NAME"],
-        cursorclass=pymysql.cursors.DictCursor
+        cursorclass=pymysql.cursors.DictCursor,
     )
+
 
 def validate_match_data(match_data) -> bool:
     try:
@@ -25,7 +27,7 @@ def validate_match_data(match_data) -> bool:
             return False
     except (ValueError, TypeError):
         return False
-    
+
     return True
 
 
@@ -38,27 +40,17 @@ def lambda_handler(event, context):
             "statusCode": 400,
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+                "Access-Control-Allow-Origin": "*",
             },
-            "body": json.dumps("Invalid match data")
+            "body": json.dumps("Invalid match data"),
         }
-    
+
     id = int(match_data.get("id"))
     team_1_id = int(match_data.get("team_1_id"))
     team_2_id = int(match_data.get("team_2_id"))
     start_date = int(match_data.get("date"))
-    start_date_date = datetime.fromtimestamp(start_date/1000)
+    start_date_date = datetime.fromtimestamp(start_date / 1000)
     vod_url = match_data.get("vod_url")
-
-    if start_date_date < datetime.now():
-        return {
-            "statusCode": 400,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps("Start date can not be in the past")
-        }
 
     connection = None
     try:
@@ -67,27 +59,27 @@ def lambda_handler(event, context):
         with connection.cursor() as cursor:
             rows_affected = cursor.execute(
                 "UPDATE tournament_matches SET team_1_id=%s, team_2_id=%s, start_date=%s, vod_url=%s WHERE id=%s",
-                (team_1_id, team_2_id, start_date_date, vod_url, id)
+                (team_1_id, team_2_id, start_date_date, vod_url, id),
             )
             connection.commit()
 
         if rows_affected == 0:
             return {
-                'statusCode': 404,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
+                "statusCode": 404,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
                 },
-                'body': json.dumps({"error": f"Match not found with id: {id}"})
+                "body": json.dumps({"error": f"Match not found with id: {id}"}),
             }
 
         return {
             "statusCode": 200,
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+                "Access-Control-Allow-Origin": "*",
             },
-            "body": json.dumps("Tournament match updated successfully")
+            "body": json.dumps("Tournament match updated successfully"),
         }
 
     except Exception as e:
@@ -95,9 +87,9 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
+                "Access-Control-Allow-Origin": "*",
             },
-            "body": json.dumps(f"Failed to update tournament match, Error: {str(e)}")
+            "body": json.dumps(f"Failed to update tournament match, Error: {str(e)}"),
         }
     finally:
         if connection:
