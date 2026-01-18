@@ -572,7 +572,7 @@ Resources:
     Properties:
       CodeUri: lambdas/pickems-evaluator/pickems-evaluator/
       Handler: pickems_evaluator::pickems_evaluator.Function::FunctionHandler
-      Runtime: dotnet8.0
+      Runtime: dotnet8
       Timeout: 30
       MemorySize: 256
       Architectures:
