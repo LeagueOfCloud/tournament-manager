@@ -7,6 +7,14 @@ using pickems_evaluator.Models.RiotApi;
 
 namespace pickems_evaluator;
 
+public class PickemsOutput
+{
+    public Dictionary<string, object> PlayerStats { get; set; } = new();
+    public Dictionary<string, object> TeamStats { get; set; } = new();
+    public Dictionary<string, object> ChampionStats { get; set; } = new();
+    public Dictionary<string, object> GameStats { get; set; } = new();
+}
+
 public class Function
 {
 
@@ -19,16 +27,16 @@ public class Function
     /// <param name="input">The event for the Lambda function handler to process.</param>
     /// <param name="context">The ILambdaContext that provides methods for logging and describing the Lambda environment.</param>
     /// <returns></returns>
-    public async void FunctionHandler(string input, ILambdaContext context)
+    public async Task<PickemsOutput> FunctionHandler(string input, ILambdaContext context)
     {
+        var output = new PickemsOutput();
+
         var DBmatches = await DatabaseHelper.ExecuteQueryAsync<TournementMatch>(tournementMatchesQuery, reader => new TournementMatch
         {
             Id = (int)reader["id"],
             WinnerTeamId = (int)reader["winner_team_id"],
             TournementMatchId = reader["tournament_match_id"].ToString(),
         });
-
-        Console.WriteLine($"Retrieved {DBmatches.Count} tournament matches");
 
         var matches = new List<Match>();
         foreach (var match in DBmatches)
@@ -52,37 +60,29 @@ public class Function
             matches[matches.Count - 1].Participants[9].TeamId = team1Id[0];
         }
 
+        output.PlayerStats["MostFirstBloods"] = PickemsAnalyzer.GetMostFirstBloods(matches);
+        output.PlayerStats["HighestKDAPlayer"] = PickemsAnalyzer.GetHighestKDAPlayer(matches);
+        output.PlayerStats["MostDeathsPlayer"] = PickemsAnalyzer.GetMostDeathsPlayer(matches);
+        output.PlayerStats["WorstVisionScorePlayer"] = PickemsAnalyzer.GetWorstVisionScorePlayer(matches);
+        output.PlayerStats["MostCSInSingleGame"] = PickemsAnalyzer.GetMostCSInSingleGame(matches);
 
-        Console.WriteLine($"Fetched {matches.Count} matches from Riot API\n");
+        output.TeamStats["MostKillsTeam"] = PickemsAnalyzer.GetMostKillsTeam(matches);
+        output.TeamStats["MostObjectivesTeam"] = PickemsAnalyzer.GetMostObjectivesTeam(matches);
+        output.TeamStats["MostDeathsTeam"] = PickemsAnalyzer.GetMostDeathsTeam(matches);
+        output.TeamStats["MostStructureDamageInSingleGame"] = PickemsAnalyzer.GetMostStructureDamageInSingleGame(matches);
+        output.TeamStats["MostPingsInSingleGame"] = PickemsAnalyzer.GetMostPingsInSingleGame(matches);
 
-        Console.WriteLine("=== Pickem's Output ===");
+        output.ChampionStats["MostBannedChampion"] = PickemsAnalyzer.GetMostBannedChampion(matches);
+        output.ChampionStats["ChampionTanksMostDamage"] = PickemsAnalyzer.GetChampionTanksMostDamage(matches);
+        output.ChampionStats["ChampionDealtMostDamage"] = PickemsAnalyzer.GetChampionDealtMostDamage(matches);
+        output.ChampionStats["MostDeathsChampion"] = PickemsAnalyzer.GetMostDeathsChampion(matches);
 
-        Console.WriteLine("PLAYER STATS:");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostFirstBloods(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetHighestKDAPlayer(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostDeathsPlayer(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetWorstVisionScorePlayer(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostCSInSingleGame(matches)}");
+        output.GameStats["GamesLongerThan45Minutes"] = PickemsAnalyzer.GetGamesLongerThan45Minutes(matches);
+        output.GameStats["TotalObjectiveSteals"] = PickemsAnalyzer.GetTotalObjectiveSteals(matches);
+        output.GameStats["TotalPentakills"] = PickemsAnalyzer.GetTotalPentakills(matches);
+        output.GameStats["ShortestGameDuration"] = PickemsAnalyzer.GetShortestGameDuration(matches);
+        output.GameStats["BiggestGoldDifference"] = PickemsAnalyzer.GetBiggestGoldDifference(matches);
 
-        Console.WriteLine("\nTEAM STATS:");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostKillsTeam(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostObjectivesTeam(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostDeathsTeam(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostStructureDamageInSingleGame(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostPingsInSingleGame(matches)}");
-
-        Console.WriteLine("\nCHAMPION STATS:");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostBannedChampion(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetChampionTanksMostDamage(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetChampionDealtMostDamage(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetMostDeathsChampion(matches)}");
-
-        Console.WriteLine("\nGAME STATS:");
-        Console.WriteLine($"  {PickemsAnalyzer.GetGamesLongerThan45Minutes(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetTotalObjectiveSteals(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetTotalPentakills(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetShortestGameDuration(matches)}");
-        Console.WriteLine($"  {PickemsAnalyzer.GetBiggestGoldDifference(matches)}");
-
+        return output;
     }
 }

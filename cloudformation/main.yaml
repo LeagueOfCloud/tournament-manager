@@ -577,6 +577,15 @@ Resources:
       MemorySize: 256
       Architectures:
         - x86_64
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /pickems-evaluate
+            Method: GET
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref Api
 
   ###########################################################
   # DREAMDRAFT LAMBDAS                                      #
