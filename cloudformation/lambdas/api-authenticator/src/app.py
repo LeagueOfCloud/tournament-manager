@@ -25,6 +25,7 @@ PATH_PERMISSIONS = {
     "POST /tournament/create-lobby/{id}": "admin",
     "POST /champ-select-lobby": "admin",
     "GET /champ-select-lobby": "admin",
+    "GET /admin/stats": "admin",
 }
 
 
