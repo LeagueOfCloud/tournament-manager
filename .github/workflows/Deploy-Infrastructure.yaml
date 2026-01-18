@@ -51,7 +51,7 @@ jobs:
       - name: Build Templates
         run: |
           sam validate -t cloudformation/main.yaml
-          sam build -t cloudformation/main.yaml --use-container
+          sam build -t cloudformation/main.yaml --use-container --mount-with WRITE
 
       - name: Deploy Stack
         run: |

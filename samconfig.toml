@@ -2,6 +2,7 @@ version = 0.1
 
 [default.build.parameters]
 use_container = true
+mount_with = "WRITE"
 
 [default.deploy.parameters]
 stack_name = "tournament-manager"
