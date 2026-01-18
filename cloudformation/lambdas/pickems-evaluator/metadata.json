@@ -1,0 +1,7 @@
+{
+  "Metadata": {
+    "BuildMethod": "dotnet8",
+    "RuntimeVersions": ["net8.0"],
+    "DockerTag": "dotnet8"
+  }
+}

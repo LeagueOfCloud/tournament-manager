@@ -567,6 +567,17 @@ Resources:
               Authorizer: NONE
             RestApiId: !Ref Api
 
+  PickemsEvaluatorLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/pickems-evaluator/pickems-evaluator/
+      Handler: pickems_evaluator::pickems_evaluator.Function::FunctionHandler
+      Runtime: dotnet8.0
+      Timeout: 30
+      MemorySize: 256
+      Architectures:
+        - x86_64
+
   ###########################################################
   # DREAMDRAFT LAMBDAS                                      #
   ###########################################################

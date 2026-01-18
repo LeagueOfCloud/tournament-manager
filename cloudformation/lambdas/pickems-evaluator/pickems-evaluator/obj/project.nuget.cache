@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "GjzMpWgdTxA=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Sam\\OneDrive\\Documents\\GitHub\\tournament-manager\\cloudformation\\lambdas\\pickems-evaluator\\pickems-evaluator\\pickems-evaluator.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Sam\\.nuget\\packages\\amazon.lambda.core\\2.8.0\\amazon.lambda.core.2.8.0.nupkg.sha512",
+    "C:\\Users\\Sam\\.nuget\\packages\\amazon.lambda.serialization.systemtextjson\\2.4.4\\amazon.lambda.serialization.systemtextjson.2.4.4.nupkg.sha512",
+    "C:\\Users\\Sam\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.2\\microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",
+    "C:\\Users\\Sam\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.2\\microsoft.extensions.logging.abstractions.8.0.2.nupkg.sha512",
+    "C:\\Users\\Sam\\.nuget\\packages\\mysqlconnector\\2.5.0\\mysqlconnector.2.5.0.nupkg.sha512",
+    "C:\\Users\\Sam\\.nuget\\packages\\microsoft.netcore.app.crossgen2.win-x64\\8.0.23\\microsoft.netcore.app.crossgen2.win-x64.8.0.23.nupkg.sha512"
+  ],
+  "logs": []
+}
