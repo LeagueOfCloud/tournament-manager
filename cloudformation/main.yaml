@@ -730,3 +730,20 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref ConnectionsTable
+
+  ###########################################################
+  # Admin                                                   #
+  ###########################################################
+  AdminStatsGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/admin/stats/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /admin/stats
+            Method: GET
+            RestApiId: !Ref Api
