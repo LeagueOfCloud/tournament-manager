@@ -3,9 +3,10 @@ import json
 import requests
 import boto3
 import pymysql
+import traceback
 
 TWITCH_STREAMS_URL = "https://api.twitch.tv/helix/streams"
-GET_CHANNEL_NAME_SQL = "SELECT value FROM config WHERE name = twitch_channel"
+GET_CHANNEL_NAME_SQL = 'SELECT value FROM config WHERE name = "twitch_channel"'
 
 secrets_client = boto3.client("secretsmanager")
 
@@ -50,13 +51,13 @@ def lambda_handler(event, context):
             cursor.execute(GET_CHANNEL_NAME_SQL)
             result = cursor.fetchone()
 
-            if not result or not result["value"]:
-                return response(400, "twitch_channel is not defined in the database")
+        if not result or not result["value"]:
+            return response(400, "twitch_channel is not defined in the database")
 
-            channel_login = result["value"]
+        channel_login = result["value"]
 
         if not client_id or not secret_arn or not channel_login:
-            raise ValueError("Missing required configuration")
+            return response(500, "Misconfiguration error")
 
         access_token = get_access_token(secret_arn)
 
@@ -64,27 +65,21 @@ def lambda_handler(event, context):
 
         params = {"user_login": channel_login}
 
-        response = requests.get(
+        res = requests.get(
             TWITCH_STREAMS_URL, headers=headers, params=params, timeout=10
         )
-        response.raise_for_status()
+        res.raise_for_status()
 
-        data = response.json().get("data", [])
+        data = res.json().get("data", [])
 
         is_live = len(data) > 0
 
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
-            "is_live": is_live,
-        }
+        return response(200, {"is_live": is_live})
 
-    except requests.RequestException as e:
-        print("Error checking Twitch stream status:", str(e))
-        raise
+    except:
+        traceback.print_exc()
+
+        return response(500, {"message": "There was an error fetching the status"})
 
     finally:
         if connection:
