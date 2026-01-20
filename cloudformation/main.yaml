@@ -763,6 +763,8 @@ Resources:
           Properties:
             Path: /livecheck
             Method: GET
+            Auth:
+              Authorizer: NONE
             RestApiId: !Ref Api
 
   ###########################################################
