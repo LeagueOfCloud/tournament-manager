@@ -41,7 +41,7 @@ public static class DatabaseHelper
 
     private static void SetDatabaseConnection()
     {
-        var username = Environment.GetEnvironmentVariable("DB_USERNAME")
+        var username = Environment.GetEnvironmentVariable("DB_USER")
             ?? throw new InvalidOperationException("DB_USERNAME not set");
         var password = Environment.GetEnvironmentVariable("DB_PASSWORD")
             ?? throw new InvalidOperationException("DB_PASSWORD not set");
@@ -49,13 +49,15 @@ public static class DatabaseHelper
             ?? throw new InvalidOperationException("DB_HOST not set");
         var port = Environment.GetEnvironmentVariable("DB_PORT")
             ?? throw new InvalidOperationException("DB_PORT not set");
+        var name = Environment.GetEnvironmentVariable("DB_NAME")
+            ?? throw new InvalidOperationException("DB_NAME not set");
 
         Connection = new MySqlConnectionStringBuilder
         {
             Server = host,
             UserID = username,
             Password = password,
-            Database = "tournament_db",
+            Database = name,
         };
     }
 }
