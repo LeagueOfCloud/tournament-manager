@@ -30,13 +30,15 @@ public class Function
     public async Task<PickemsOutput> FunctionHandler(object input, ILambdaContext context)
     {
         var output = new PickemsOutput();
-
+        Console.WriteLine("Start");
         var DBmatches = await DatabaseHelper.ExecuteQueryAsync<TournementMatch>(tournementMatchesQuery, reader => new TournementMatch
         {
             Id = (int)reader["id"],
             WinnerTeamId = (int)reader["winner_team_id"],
             TournementMatchId = reader["tournament_match_id"].ToString(),
         });
+
+        Console.WriteLine("Collected macthes");
 
         var matches = new List<Match>();
         foreach (var match in DBmatches)
@@ -60,6 +62,8 @@ public class Function
             matches[matches.Count - 1].Participants[9].TeamId = team1Id[0];
         }
 
+        Console.WriteLine("API data called");
+
         output.PlayerStats["MostFirstBloods"] = PickemsAnalyzer.GetMostFirstBloods(matches);
         output.PlayerStats["HighestKDAPlayer"] = PickemsAnalyzer.GetHighestKDAPlayer(matches);
         output.PlayerStats["MostDeathsPlayer"] = PickemsAnalyzer.GetMostDeathsPlayer(matches);
@@ -82,6 +86,8 @@ public class Function
         output.GameStats["TotalPentakills"] = PickemsAnalyzer.GetTotalPentakills(matches);
         output.GameStats["ShortestGameDuration"] = PickemsAnalyzer.GetShortestGameDuration(matches);
         output.GameStats["BiggestGoldDifference"] = PickemsAnalyzer.GetBiggestGoldDifference(matches);
+
+        Console.WriteLine("Returning to it");
 
         return output;
     }
