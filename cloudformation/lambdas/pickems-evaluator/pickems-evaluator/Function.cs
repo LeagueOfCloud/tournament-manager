@@ -27,7 +27,7 @@ public class Function
     /// <param name="input">The event for the Lambda function handler to process.</param>
     /// <param name="context">The ILambdaContext that provides methods for logging and describing the Lambda environment.</param>
     /// <returns></returns>
-    public async Task<PickemsOutput> FunctionHandler(string input, ILambdaContext context)
+    public async Task<PickemsOutput> FunctionHandler(object input, ILambdaContext context)
     {
         var output = new PickemsOutput();
 
