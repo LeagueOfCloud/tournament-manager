@@ -10,6 +10,8 @@ Parameters:
     Type: String
   RestartDBInstanceId:
     Type: String
+  TwitchAppSecretArn:
+    Type: String
 
 Globals:
   Function:
@@ -79,7 +81,7 @@ Resources:
       EndpointConfiguration:
         Type: REGIONAL
 
-  LambdaWithS3AccessRole:
+  LambdaRole:
       Type: AWS::IAM::Role
       Properties:
         ManagedPolicyArns:
@@ -111,6 +113,15 @@ Resources:
                     - dynamodb:*
                   Resource:
                     - !GetAtt ConnectionsTable.Arn
+          - PolicyName: SecretsManager
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:*
+                  Resource:
+                    - !Ref TwitchAppSecretArn
 
   ApiAuthenticatorLambda:
     Type: AWS::Serverless::Function
@@ -163,7 +174,7 @@ Resources:
   CreatePlayerLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: lambdas/players/create/src/
       Handler: app.lambda_handler
       Timeout: 30
@@ -192,7 +203,7 @@ Resources:
   UpdatePlayerLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: lambdas/players/update/src/
       Handler: app.lambda_handler
       Timeout: 30
@@ -353,7 +364,7 @@ Resources:
   CreateTeamLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: lambdas/teams/create/src/
       Handler: app.lambda_handler
       Timeout: 30
@@ -382,7 +393,7 @@ Resources:
   UpdateTeamLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: lambdas/teams/update/src/
       Handler: app.lambda_handler
       Timeout: 30
@@ -718,7 +729,7 @@ Resources:
   ChampSelectLobbyCreateLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: lambdas/champ-select/post/src/
       Handler: app.lambda_handler
       Timeout: 30
@@ -736,7 +747,7 @@ Resources:
   ChampSelectLobbyGetLambda:
     Type: AWS::Serverless::Function
     Properties:
-      Role: !GetAtt LambdaWithS3AccessRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: lambdas/champ-select/get/src/
       Handler: app.lambda_handler
       Timeout: 30
@@ -750,3 +761,61 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref ConnectionsTable
+
+  ###########################################################
+  # Live Check                                              #
+  ###########################################################
+  LiveCheck:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/livecheck/src/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          TWITCH_CLIENT_ID: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:twitch_client_id}}"
+          TWITCH_CLIENT_SECRET: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:twitch_client_secret}}"
+          TWITCH_APP_SECRET_ARN: !Ref TwitchAppSecretArn
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /livecheck
+            Method: GET
+            Auth:
+              Authorizer: NONE
+            RestApiId: !Ref Api
+
+  ###########################################################
+  # Admin                                                   #
+  ###########################################################
+  AdminStatsGetLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/admin/stats/src/
+      Handler: app.lambda_handler
+      Timeout: 30
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /admin/stats
+            Method: GET
+            RestApiId: !Ref Api
+  
+  ###########################################################
+  # Twitch Token Refresher                                  #
+  ###########################################################
+  TwitchTokenRefresher:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/twitch-api-token-refresher/src/
+      Handler: app.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          TWITCH_CLIENT_ID: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:twitch_client_id}}"
+          TWITCH_CLIENT_SECRET: !Sub "{{resolve:secretsmanager:${SecretArn}:SecretString:twitch_client_secret}}"
+          TWITCH_APP_SECRET_ARN: !Ref TwitchAppSecretArn

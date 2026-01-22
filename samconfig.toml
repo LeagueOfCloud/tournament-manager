@@ -15,6 +15,7 @@ parameter_overrides = [
     "SecretArn=arn:aws:secretsmanager:eu-west-1:327362716042:secret:tournament-manager-t46p79",
     "S3AssetsBucket=lockout-tournament-assets",
     "SecretVersion=1.2",
-    "RestartDBInstanceId=i-04694c0408ed2540e"
+    "RestartDBInstanceId=i-04694c0408ed2540e",
+    "TwitchAppSecretArn=arn:aws:secretsmanager:eu-west-1:327362716042:secret:twitch-api-token-VGN2bf"
 ]
 image_repositories = []
