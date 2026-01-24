@@ -7,29 +7,17 @@ using pickems_evaluator.Models.RiotApi;
 
 namespace pickems_evaluator;
 
-public class PickemsOutput
-{
-    public Dictionary<string, object> PlayerStats { get; set; } = new();
-    public Dictionary<string, object> TeamStats { get; set; } = new();
-    public Dictionary<string, object> ChampionStats { get; set; } = new();
-    public Dictionary<string, object> GameStats { get; set; } = new();
-}
-
 public class Function
 {
 
     public const string tournementMatchesQuery = "SELECT * FROM tournament_matches";
     public const string teamQuery = "SELECT team_id from players p join riot_accounts ra on p.id = ra.player_id where account_puuid =";
+    public const string profileQuery = "SELECT id FROM profiles";
+    public const string pickemsQuery = "SELECT * FROM pickems where user =";
 
-    /// <summary>
-    /// A simple function that takes a string and does a ToUpper
-    /// </summary>
-    /// <param name="input">The event for the Lambda function handler to process.</param>
-    /// <param name="context">The ILambdaContext that provides methods for logging and describing the Lambda environment.</param>
-    /// <returns></returns>
-    public async Task<PickemsOutput> FunctionHandler(object input, ILambdaContext context)
+    public async Task<Dictionary<string, string>> FunctionHandler(object input, ILambdaContext context)
     {
-        var output = new PickemsOutput();
+        var output = new Dictionary<string, string>();
         Console.WriteLine("Start");
         var DBmatches = await DatabaseHelper.ExecuteQueryAsync<TournementMatch>(tournementMatchesQuery, reader => new TournementMatch
         {
@@ -55,39 +43,63 @@ public class Function
 
             var team2Id = await DatabaseHelper.ExecuteQueryAsync<int>($"{teamQuery}'{matches[matches.Count - 1].Participants[9].ParticipantId}'", reader => (int)reader["team_id"]);
             matches[matches.Count - 1].Teams[1].TeamId = team2Id[0];
-            matches[matches.Count - 1].Participants[5].TeamId = team1Id[0];
-            matches[matches.Count - 1].Participants[6].TeamId = team1Id[0];
-            matches[matches.Count - 1].Participants[7].TeamId = team1Id[0];
-            matches[matches.Count - 1].Participants[8].TeamId = team1Id[0];
-            matches[matches.Count - 1].Participants[9].TeamId = team1Id[0];
+            matches[matches.Count - 1].Participants[5].TeamId = team2Id[0];
+            matches[matches.Count - 1].Participants[6].TeamId = team2Id[0];
+            matches[matches.Count - 1].Participants[7].TeamId = team2Id[0];
+            matches[matches.Count - 1].Participants[8].TeamId = team2Id[0];
+            matches[matches.Count - 1].Participants[9].TeamId = team2Id[0];
         }
 
         Console.WriteLine("API data called");
 
-        output.PlayerStats["MostFirstBloods"] = PickemsAnalyzer.GetMostFirstBloods(matches);
-        output.PlayerStats["HighestKDAPlayer"] = PickemsAnalyzer.GetHighestKDAPlayer(matches);
-        output.PlayerStats["MostDeathsPlayer"] = PickemsAnalyzer.GetMostDeathsPlayer(matches);
-        output.PlayerStats["WorstVisionScorePlayer"] = PickemsAnalyzer.GetWorstVisionScorePlayer(matches);
-        output.PlayerStats["MostCSInSingleGame"] = PickemsAnalyzer.GetMostCSInSingleGame(matches);
+        output["MostFirstBloods"] = PickemsAnalyser.GetMostFirstBloods(matches);
+        output["HighestKDAPlayer"] = PickemsAnalyser.GetHighestKDAPlayer(matches);
+        output["MostDeathsPlayer"] = PickemsAnalyser.GetMostDeathsPlayer(matches);
+        output["WorstVisionScorePlayer"] = PickemsAnalyser.GetWorstVisionScorePlayer(matches);
+        output["MostCSInSingleGame"] = PickemsAnalyser.GetMostCSInSingleGame(matches);
 
-        output.TeamStats["MostKillsTeam"] = PickemsAnalyzer.GetMostKillsTeam(matches);
-        output.TeamStats["MostObjectivesTeam"] = PickemsAnalyzer.GetMostObjectivesTeam(matches);
-        output.TeamStats["MostDeathsTeam"] = PickemsAnalyzer.GetMostDeathsTeam(matches);
-        output.TeamStats["MostStructureDamageInSingleGame"] = PickemsAnalyzer.GetMostStructureDamageInSingleGame(matches);
-        output.TeamStats["MostPingsInSingleGame"] = PickemsAnalyzer.GetMostPingsInSingleGame(matches);
+        output["MostKillsTeam"] = PickemsAnalyser.GetMostKillsTeam(matches);
+        output["MostObjectivesTeam"] = PickemsAnalyser.GetMostObjectivesTeam(matches);
+        output["MostDeathsTeam"] = PickemsAnalyser.GetMostDeathsTeam(matches);
+        output["MostStructureDamageInSingleGame"] = PickemsAnalyser.GetMostStructureDamageInSingleGame(matches);
+        output["MostPingsInSingleGame"] = PickemsAnalyser.GetMostPingsInSingleGame(matches);
 
-        output.ChampionStats["MostBannedChampion"] = PickemsAnalyzer.GetMostBannedChampion(matches);
-        output.ChampionStats["ChampionTanksMostDamage"] = PickemsAnalyzer.GetChampionTanksMostDamage(matches);
-        output.ChampionStats["ChampionDealtMostDamage"] = PickemsAnalyzer.GetChampionDealtMostDamage(matches);
-        output.ChampionStats["MostDeathsChampion"] = PickemsAnalyzer.GetMostDeathsChampion(matches);
+        output["MostBannedChampion"] = PickemsAnalyser.GetMostBannedChampion(matches);
+        output["ChampionTanksMostDamage"] = PickemsAnalyser.GetChampionTanksMostDamage(matches);
+        output["ChampionDealtMostDamage"] = PickemsAnalyser.GetChampionDealtMostDamage(matches);
+        output["MostDeathsChampion"] = PickemsAnalyser.GetMostDeathsChampion(matches);
 
-        output.GameStats["GamesLongerThan45Minutes"] = PickemsAnalyzer.GetGamesLongerThan45Minutes(matches);
-        output.GameStats["TotalObjectiveSteals"] = PickemsAnalyzer.GetTotalObjectiveSteals(matches);
-        output.GameStats["TotalPentakills"] = PickemsAnalyzer.GetTotalPentakills(matches);
-        output.GameStats["ShortestGameDuration"] = PickemsAnalyzer.GetShortestGameDuration(matches);
-        output.GameStats["BiggestGoldDifference"] = PickemsAnalyzer.GetBiggestGoldDifference(matches);
+        output["GamesLongerThan45Minutes"] = PickemsAnalyser.GetGamesLongerThan45Minutes(matches);
+        output["TotalObjectiveSteals"] = PickemsAnalyser.GetTotalObjectiveSteals(matches);
+        output["TotalPentakills"] = PickemsAnalyser.GetTotalPentakills(matches);
+        output["ShortestGameDuration"] = PickemsAnalyser.GetShortestGameDuration(matches);
+        output["BiggestGoldDifference"] = PickemsAnalyser.GetBiggestGoldDifference(matches);
 
-        Console.WriteLine("Returning to it");
+        var profiles = await DatabaseHelper.ExecuteQueryAsync<int>(profileQuery, reader => (int)reader["id"]);
+
+        foreach (var profileId in profiles)
+        {
+            var pickems = await DatabaseHelper.ExecuteQueryAsync<Pickems>($"{pickemsQuery}{profileId}", reader => new Pickems
+            {
+                Id = reader["id"].ToString(),
+                PickemId = reader["pickem_id"].ToString(),
+                Value = reader["value"].ToString(),
+            });
+
+            int profileScore = 0;
+            foreach (var pickem in pickems)
+            {
+                if (output.TryGetValue(pickem.PickemId, out var correctAnswer))
+                {
+                    if (correctAnswer == pickem.Value)
+                    {
+                        profileScore++;
+                    }
+                }
+            }
+
+            Console.WriteLine($"Profile{profileId} Scored {profileScore}");
+        }
 
         return output;
     }

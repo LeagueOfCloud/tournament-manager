@@ -8,7 +8,7 @@
       "version": "1.0.0",
       "restore": {
         "projectUniqueName": "C:\\Users\\Sam\\OneDrive\\Documents\\GitHub\\tournament-manager\\cloudformation\\lambdas\\pickems-evaluator\\pickems-evaluator\\pickems-evaluator.csproj",
-        "projectName": "pickems-evaluator",
+        "projectName": "pickems_evaluator",
         "projectPath": "C:\\Users\\Sam\\OneDrive\\Documents\\GitHub\\tournament-manager\\cloudformation\\lambdas\\pickems-evaluator\\pickems-evaluator\\pickems-evaluator.csproj",
         "packagesPath": "C:\\Users\\Sam\\.nuget\\packages\\",
         "outputPath": "C:\\Users\\Sam\\OneDrive\\Documents\\GitHub\\tournament-manager\\cloudformation\\lambdas\\pickems-evaluator\\pickems-evaluator\\obj\\",

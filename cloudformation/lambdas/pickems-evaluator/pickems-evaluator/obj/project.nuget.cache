@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "GjzMpWgdTxA=",
+  "dgSpecHash": "pITwI0YYkcc=",
   "success": true,
   "projectFilePath": "C:\\Users\\Sam\\OneDrive\\Documents\\GitHub\\tournament-manager\\cloudformation\\lambdas\\pickems-evaluator\\pickems-evaluator\\pickems-evaluator.csproj",
   "expectedPackageFiles": [

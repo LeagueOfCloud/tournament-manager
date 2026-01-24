@@ -2,7 +2,7 @@ using pickems_evaluator.Models.RiotApi;
 
 namespace pickems_evaluator;
 
-public static class PickemsAnalyzer
+public static class PickemsAnalyser
 {
     // Which Player will have the most first bloods?
     public static string GetMostFirstBloods(List<Match> matches)

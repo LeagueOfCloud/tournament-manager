@@ -1,0 +1,35 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cloudformation", "cloudformation", "{3207D0FC-ADD6-45FD-9824-251C2FB2ADEF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lambdas", "lambdas", "{69DC62A7-0D79-5677-7C22-677F6A7987CB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pickems-evaluator", "pickems-evaluator", "{73D3B0C2-4DB9-A363-7EEF-32CA5E8D1F1F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pickems-evaluator", "cloudformation\lambdas\pickems-evaluator\pickems-evaluator\pickems-evaluator.csproj", "{479BD258-D4AD-B5C4-4370-31E633AD7BE6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{479BD258-D4AD-B5C4-4370-31E633AD7BE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{479BD258-D4AD-B5C4-4370-31E633AD7BE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{479BD258-D4AD-B5C4-4370-31E633AD7BE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{479BD258-D4AD-B5C4-4370-31E633AD7BE6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{69DC62A7-0D79-5677-7C22-677F6A7987CB} = {3207D0FC-ADD6-45FD-9824-251C2FB2ADEF}
+		{73D3B0C2-4DB9-A363-7EEF-32CA5E8D1F1F} = {69DC62A7-0D79-5677-7C22-677F6A7987CB}
+		{479BD258-D4AD-B5C4-4370-31E633AD7BE6} = {73D3B0C2-4DB9-A363-7EEF-32CA5E8D1F1F}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7D66DBD6-3ADC-4692-81B2-80F19D8915F0}
+	EndGlobalSection
+EndGlobal
