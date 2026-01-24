@@ -13,7 +13,7 @@ public class Function
     public const string tournementMatchesQuery = "SELECT * FROM tournament_matches";
     public const string teamQuery = "SELECT team_id from players p join riot_accounts ra on p.id = ra.player_id where account_puuid =";
     public const string profileQuery = "SELECT id FROM profiles";
-    public const string pickemsQuery = "SELECT * FROM pickems where user =";
+    public const string pickemsQuery = "SELECT * FROM pickems where user_id =";
 
     public async Task<Dictionary<string, string>> FunctionHandler(object input, ILambdaContext context)
     {
