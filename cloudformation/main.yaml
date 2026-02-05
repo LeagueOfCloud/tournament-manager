@@ -42,6 +42,7 @@ Resources:
         FetchMatchDataLambdaArn: !GetAtt FetchMatchDataLambda.Arn
         FetchPlayerStatsLambdaArn: !GetAtt FetchPlayerStatsLambda.Arn
         ProcessMatchDataLambdaArn: !GetAtt ProcessMatchDataLambda.Arn
+        PickemsEvaluatorLambdaArn: !GetAtt PickemsEvaluatorLambda.Arn
         RestartDBInstanceId: !Ref RestartDBInstanceId
   
   Websockets:
