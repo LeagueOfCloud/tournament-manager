@@ -6,12 +6,11 @@ using MySqlConnector;
 namespace pickems_evaluator.Data;
 
 public static class DatabaseHelper
-{
-    private static MySqlConnectionStringBuilder Connection;
+{    private static MySqlConnectionStringBuilder Connection;
 
     public static async Task<List<T>> ExecuteQueryAsync<T>(string query, Func<IDataReader, T> mapper)
     {
-        if(Connection is null)
+        if (Connection is null)
         {
             SetDatabaseConnection();
         }
@@ -37,6 +36,28 @@ public static class DatabaseHelper
         }
 
         return results;
+    }
+
+    public static async Task ExecuteUpdateAsync(string query)
+    {
+        if (Connection is null)
+        {
+            SetDatabaseConnection();
+        }
+
+        try
+        {
+            await using var connection = new MySqlConnection(Connection.ConnectionString);
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText = query;
+            await command.ExecuteNonQueryAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database error: {ex.Message}");
+            throw;
+        }
     }
 
     private static void SetDatabaseConnection()

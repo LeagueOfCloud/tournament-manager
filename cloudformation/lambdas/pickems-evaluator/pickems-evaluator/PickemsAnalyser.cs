@@ -4,7 +4,7 @@ namespace pickems_evaluator;
 
 public static class PickemsAnalyser
 {
-    // Which Player will have the most first bloods?
+   
     public static string GetMostFirstBloods(List<Match> matches)
     {
         var firstBloodCounts = new Dictionary<string, int>();
@@ -33,10 +33,8 @@ public static class PickemsAnalyser
             .Select(x => x.Key)
             .ToList();
 
-        return $"Participants {string.Join(", ", topParticipants)} with {maxValue} first bloods";
+        return string.Join(", ", topParticipants);
     }
-
-    // Which Player will have the highest KDA overall?
     public static string GetHighestKDAPlayer(List<Match> matches)
     {
         var participantStats = new Dictionary<string, (int kills, int deaths, int assists)>();
@@ -67,7 +65,7 @@ public static class PickemsAnalyser
             ? ((bestKDA.Value.kills + bestKDA.Value.assists) / (double)bestKDA.Value.deaths)
             : (bestKDA.Value.kills + bestKDA.Value.assists);
 
-        return $"Participant {bestKDA.Key} with KDA {kdaRatio:F2} ({bestKDA.Value.kills}/{bestKDA.Value.deaths}/{bestKDA.Value.assists})";
+        return bestKDA.Key;
     }
 
     // Which player will die the most?
@@ -87,7 +85,7 @@ public static class PickemsAnalyser
         }
 
         var result = participantDeaths.OrderByDescending(x => x.Value).FirstOrDefault();
-        return $"Participant {result.Key} with {result.Value} deaths";
+        return result.Key;
     }
 
     // Which player will have the worst vision score overall?
@@ -107,7 +105,7 @@ public static class PickemsAnalyser
         }
 
         var result = participantVision.OrderBy(x => x.Value).FirstOrDefault();
-        return $"Participant {result.Key} with {result.Value} vision score";
+        return result.Key;
     }
 
     // Which player will have the most CS in a single game?
@@ -129,7 +127,7 @@ public static class PickemsAnalyser
             }
         }
 
-        return $"Participant {participantId} with {maxCS} CS";
+        return participantId;
     }
 
     // Which team will have the most kills overall?
@@ -149,7 +147,7 @@ public static class PickemsAnalyser
         }
 
         var result = teamKills.OrderByDescending(x => x.Value).FirstOrDefault();
-        return $"Team {result.Key} with {result.Value} kills";
+        return result.Key.ToString();
     }
 
     // Which team will slay the most objectives overall?
@@ -164,15 +162,15 @@ public static class PickemsAnalyser
                 if (!teamObjectives.ContainsKey(participant.TeamId))
                     teamObjectives[participant.TeamId] = 0;
 
-                int objectives = participant.DragonKills + participant.BaronKills + 
-                                participant.RiftHeraldKills + participant.InhibitorKills + 
+                int objectives = participant.DragonKills + participant.BaronKills +
+                                participant.RiftHeraldKills + participant.InhibitorKills +
                                 participant.TurretKills;
                 teamObjectives[participant.TeamId] += objectives;
             }
         }
 
         var result = teamObjectives.OrderByDescending(x => x.Value).FirstOrDefault();
-        return $"Team {result.Key} with {result.Value} objectives";
+        return result.Key.ToString();
     }
 
     // Which team will have the most deaths overall?
@@ -192,7 +190,7 @@ public static class PickemsAnalyser
         }
 
         var result = teamDeaths.OrderByDescending(x => x.Value).FirstOrDefault();
-        return $"Team {result.Key} with {result.Value} deaths";
+        return result.Key.ToString();
     }
 
     // Which team will deal the most damage to structures in a single game?
@@ -221,7 +219,7 @@ public static class PickemsAnalyser
             }
         }
 
-        return $"Team {teamId} with {maxDamage} structure damage in a single game";
+        return teamId.ToString();
     }
 
     // Which team will have the most pings in a single game?
@@ -250,7 +248,7 @@ public static class PickemsAnalyser
             }
         }
 
-        return $"Team {teamId} with {maxPings} pings in a single game";
+        return teamId.ToString();
     }
 
     // Who will be the most banned champion?
@@ -276,7 +274,7 @@ public static class PickemsAnalyser
         }
 
         var result = championBans.OrderByDescending(x => x.Value).FirstOrDefault();
-        return $"Champion {result.Key} with {result.Value} bans";
+        return result.Key.ToString();
     }
 
     // Which champion will tank the most damage in a single game?
@@ -297,7 +295,7 @@ public static class PickemsAnalyser
             }
         }
 
-        return $"Champion {championId} tanked {maxDamage} damage in a single game";
+        return championId.ToString();
     }
 
     // Which champion will deal the most damage in a single game?
@@ -318,7 +316,7 @@ public static class PickemsAnalyser
             }
         }
 
-        return $"Champion {championId} dealt {maxDamage} damage in a single game";
+        return championId.ToString();
     }
 
     // What's a champion that will be revived? (has most deaths)
@@ -338,7 +336,7 @@ public static class PickemsAnalyser
         }
 
         var result = championDeaths.OrderByDescending(x => x.Value).FirstOrDefault();
-        return $"Champion {result.Key} with {result.Value} deaths overall";
+        return result.Key.ToString();
     }
 
     // How many games will last longer than 45 minutes?
@@ -352,7 +350,7 @@ public static class PickemsAnalyser
                 count++;
         }
 
-        return $"{count} games last longer than 45 minutes";
+        return count.ToString();
     }
 
     // How many objective steals will there be overall?
@@ -368,7 +366,7 @@ public static class PickemsAnalyser
             }
         }
 
-        return $"{totalSteals} objective steals overall";
+        return totalSteals.ToString();
     }
 
     // How many total pentakills will there be?
@@ -384,19 +382,19 @@ public static class PickemsAnalyser
             }
         }
 
-        return $"{totalPentas} pentakills overall";
+        return totalPentas.ToString();
     }
 
     // How long will the shortest game be in minutes?
-    public static string GetShortestGameDuration(List<Match> matches)
+    public static double GetShortestGameDuration(List<Match> matches)
     {
         if (matches.Count == 0)
-            return "No games available";
+            return 0;
 
-        int shortestDuration = matches.Min(m => m.GameDuration);
-        int minutes = shortestDuration / 60;
+        double shortestDuration = matches.Min(m => m.GameDuration);
+        double minutes = shortestDuration / 60;
 
-        return $"Shortest game: {minutes} minutes ({shortestDuration} seconds)";
+        return minutes;
     }
 
     // What will be the biggest gold difference between teams in a game?
@@ -426,6 +424,6 @@ public static class PickemsAnalyser
             }
         }
 
-        return $"Biggest gold difference: {maxGoldDifference} gold";
+        return maxGoldDifference.ToString();
     }
 }
