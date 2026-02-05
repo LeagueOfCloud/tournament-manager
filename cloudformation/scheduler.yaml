@@ -100,7 +100,7 @@ Resources:
         Arn: !Ref FetchPlayerStatsLambdaArn
         RoleArn: !GetAtt MasterSchedulerRole.Arn
 
-    PickemsEvaluatorScheduler:
+  PickemsEvaluatorScheduler:
     Type: AWS::Scheduler::Schedule
     Properties:
       Name: PickemsEvaluatorSchedule
