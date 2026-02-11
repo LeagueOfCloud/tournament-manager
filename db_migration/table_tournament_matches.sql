@@ -26,3 +26,7 @@ ADD COLUMN team_size INT NOT NULL DEFAULT(5)
 
 ALTER TABLE tournament_matches
 ADD COLUMN vod_url VARCHAR(255) DEFAULT NULL;
+
+ALTER TABLE tournament_matches
+ADD COLUMN was_evaluated VARCHAR(10) NOT NULL DEFAULT 'false'
+        CHECK (was_evaluated IN ('true', 'false'));

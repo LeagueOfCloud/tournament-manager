@@ -29,9 +29,9 @@ MARK_MATCH_PROCESSED_SQL = """
 """
 
 UPSERT_PROCESSED_MATCH_DATA_SQL = """
-    INSERT INTO processed_match_data (match_id, account_puuid, account_name, champion_name, teamPosition, goldEarned, totalDamageDealtToChampions, totalDamageTaken, totalHealsOnTeammates, damageSelfMitigated, damageDealtToTurrets, totalTimeCCDealt, totalMinionsKilled, kills, deaths, assists, vision_score, objectivesStolen, win, queueId, gameDuration)
+    INSERT INTO processed_match_data (match_id, account_puuid, account_name, champion_name, teamPosition, goldEarned, totalDamageDealtToChampions, totalDamageTaken, totalHealsOnTeammates, damageSelfMitigated, damageDealtToTurrets, totalTimeCCDealt, totalMinionsKilled, kills, deaths, assists, vision_score, objectivesStolen, win, queueId, gameDuration, patch)
     VALUES
-        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     ON DUPLICATE KEY UPDATE
         totalHealsOnTeammates = VALUES(totalHealsOnTeammates),
         totalDamageTaken = VALUES(totalDamageTaken),
@@ -51,7 +51,8 @@ UPSERT_PROCESSED_MATCH_DATA_SQL = """
         gameDuration = VALUES(gameDuration),
         account_name = VALUES(account_name),
         champion_name = VALUES(champion_name),
-        teamPosition = VALUES(teamPosition);
+        teamPosition = VALUES(teamPosition),
+        patch = VALUES(patch);
 """
 
 
@@ -125,6 +126,8 @@ def extract_rows_for_known_puuids(
     if game_duration < 60 * 10:
         return []  # skip remade games
     participants = info.get("participants", []) or []
+    game_version = info.get("gameVersion")
+    patch = ".".join(game_version.split(".")[:2]) if game_version else None
 
     rows: List[Tuple] = []
     for p in participants:
@@ -179,6 +182,7 @@ def extract_rows_for_known_puuids(
                 win,
                 queue_id,
                 game_duration,
+                patch,
             )
         )
 
