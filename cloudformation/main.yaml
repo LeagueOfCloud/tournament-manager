@@ -611,6 +611,20 @@ Resources:
             Auth:
               Authorizer: NONE
             RestApiId: !Ref Api
+  
+  EvaluatePlayerScoresLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambdas/dream-draft/evaluate/src/
+      Handler: app.lambda_handler
+      Timeout: 60
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            Path: /dream-draft/evaluate
+            Method: POST
+            RestApiId: !Ref Api
 
   ###########################################################
   # LEADERBOARD LAMBDAS                                     #
