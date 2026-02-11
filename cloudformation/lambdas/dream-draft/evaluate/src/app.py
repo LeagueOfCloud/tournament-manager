@@ -43,12 +43,18 @@ FETCH_MATCHES_TO_EVALUATE_SQL = """
 
 FETCH_PROCESSED_MATCH_DATA_SQL = """
     SELECT
-        pmd.*,
-        tm.patch
+        pmd.*
     FROM processed_match_data pmd
     JOIN tournament_matches tm ON tm.tournament_match_id = pmd.match_id
     WHERE tm.tournament_match_id = %s;
 """ # is it ok to go by tournament_match_id here? multiple ids for single match thingy
+
+FETCH_PLAYER_ID_SQL = """
+    SELECT player_id 
+    FROM riot_accounts 
+    WHERE account_puuid = %s 
+    LIMIT 1;
+"""
 
 FETCH_BASELINES_SQL = """
     SELECT role, metric, mean, std
@@ -58,7 +64,7 @@ FETCH_BASELINES_SQL = """
 UPSERT_MATCH_SCORE_SQL = """
     INSERT INTO dreamdraft_match_scores (
         tournament_match_id,
-        account_puuid,
+        player_id,
         score
     ) VALUES (%s, %s, %s)
     ON DUPLICATE KEY UPDATE score = VALUES(score);
@@ -69,9 +75,9 @@ UPDATE_PLAYER_SCORE_SQL = """
     SET p.score = (
         SELECT COALESCE(SUM(dms.score), 0)
         FROM dreamdraft_match_scores dms
-        WHERE dms.account_puuid = p.account_puuid
+        WHERE dms.player_id = p.id
     )
-    WHERE p.account_puuid = %s;
+    WHERE p.id = %s;
 """
 
 MARK_MATCH_EVALUATED_SQL = """
@@ -91,12 +97,19 @@ default_weights = {
     "cs": 2.0,
     "dmg": 2.0,
     "vision": 1.0,
+    "heal": 1.0,
+    "cc": 1.0,
+    "dmg_turret": 1.0,
+    "dmg_taken": -1.0,
     "win": 5.0,
 }
 
 role_weights = {
-    "BOTTOM": {"kills": 3.5, "deaths": -2.5, "assists": 1.0, "cs": 4.0, "dmg": 3.5, "vision": 0.5, "win": 5.0},
-    "UTILITY": {"kills": 1.0, "deaths": -2.0, "assists": 3.5, "cs": 0.5, "dmg": 1.0, "vision": 4.0, "win": 5.0},
+    "TOP": {"kills": 3.5, "deaths": -2.5, "assists": 1.0, "cs": 4.0, "dmg": 3.5, "vision": 0.5, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0,},
+    "JUNGLE": {"kills": 1.0, "deaths": -2.0, "assists": 3.5, "cs": 0.5, "dmg": 1.0, "vision": 4.0, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0},
+    "MIDDLE": {"kills": 3.5, "deaths": -2.5, "assists": 1.0, "cs": 4.0, "dmg": 3.5, "vision": 0.5, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0,},
+    "BOTTOM": {"kills": 3.5, "deaths": -2.5, "assists": 1.0, "cs": 4.0, "dmg": 3.5, "vision": 0.5, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0,},
+    "UTILITY": {"kills": 3.5, "deaths": -2.5, "assists": 1.0, "cs": 4.0, "dmg": 3.5, "vision": 0.5, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0,},
 }
 
 def compute_scores(rows, baselines):
@@ -138,17 +151,17 @@ def compute_scores(rows, baselines):
         w = role_weights.get(r["teamPosition"], default_weights)
 
         score = (
-            w["kills"]   * r["kills_per_min_norm"] +
-            w["deaths"]  * r["deaths_per_min_norm"] +
-            w["assists"] * r["assists_per_min_norm"] +
-            w["cs"]      * r["cs_per_min_norm"] +
-            w["dmg"]     * r["dmg_per_min_norm"] +
-            w["vision"]  * r["vision_per_min_norm"] +
+            w["kills"]   * r["kills_pm_norm"] +
+            w["deaths"]  * r["deaths_pm_norm"] +
+            w["assists"] * r["assists_pm_norm"] +
+            w["cs"]      * r["cs_pm_norm"] +
+            w["dmg"]     * r["dmg_pm_norm"] +
+            w["vision"]  * r["vision_pm_norm"] +
             
-            w["heal"]    * r["heal_per_min_norm"] +
-            w["cc"]      * r["cc_per_min_norm"] +
-            w["dmg_turret"] * r["dmg_turret_per_min_norm"] +
-            w["dmg_taken"]  * r["dmg_taken_per_min_norm"]
+            w["heal"]    * r["heal_pm_norm"] +
+            w["cc"]      * r["cc_pm_norm"] +
+            w["dmg_turret"] * r["dmg_turret_pm_norm"] +
+            w["dmg_taken"]  * r["dmg_taken_pm_norm"]
         )
 
         scores.append((r["account_puuid"], score))
@@ -199,8 +212,10 @@ def lambda_handler(event, context):
                     if puuid not in tournament_players:
                         continue
 
-                    cursor.execute(UPSERT_MATCH_SCORE_SQL, (match_id, puuid, score))
-                    cursor.execute(UPDATE_PLAYER_SCORE_SQL, (puuid,))
+                    cursor.execute(FETCH_PLAYER_ID_SQL, (puuid, ))
+                    player_id = cursor.fetchone()["player_id"]
+                    cursor.execute(UPSERT_MATCH_SCORE_SQL, (match_id, player_id, score))
+                    cursor.execute(UPDATE_PLAYER_SCORE_SQL, (player_id,))
                 cursor.execute(MARK_MATCH_EVALUATED_SQL, (match_id,))
         connection.commit()
 
