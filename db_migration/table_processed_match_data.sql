@@ -44,3 +44,6 @@ ADD COLUMN damageSelfMitigated INT,
 ADD COLUMN totalHealsOnTeammates INT,
 ADD COLUMN totalTimeCCDealt INT,
 ADD COLUMN objectivesStolen INT;
+
+ALTER TABLE tournament_db.processed_match_data
+ADD COLUMN patch VARCHAR(10);
