@@ -30,6 +30,16 @@ def create_connection():
         autocommit=False,
     )
 
+def response(status_code, body):
+    return {
+        "statusCode": status_code,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+        },
+        "body": json.dumps(body, default=str),
+    }
+
 # ------------------
 # SQL
 # ------------------
@@ -105,11 +115,11 @@ default_weights = {
 }
 
 role_weights = {
-    "TOP": {"kills": 3.5, "deaths": -2.5, "assists": 1.0, "cs": 4.0, "dmg": 3.5, "vision": 0.5, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0,},
-    "JUNGLE": {"kills": 1.0, "deaths": -2.0, "assists": 3.5, "cs": 0.5, "dmg": 1.0, "vision": 4.0, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0},
-    "MIDDLE": {"kills": 3.5, "deaths": -2.5, "assists": 1.0, "cs": 4.0, "dmg": 3.5, "vision": 0.5, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0,},
-    "BOTTOM": {"kills": 3.5, "deaths": -2.5, "assists": 1.0, "cs": 4.0, "dmg": 3.5, "vision": 0.5, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0,},
-    "UTILITY": {"kills": 3.5, "deaths": -2.5, "assists": 1.0, "cs": 4.0, "dmg": 3.5, "vision": 0.5, "win": 5.0, "heal": 1.0, "cc": 1.0, "dmg_turret": 1.0, "dmg_taken": -1.0,},
+    "TOP": {"kills": 4.0, "deaths": -4.0, "assists": 2.0, "cs": 7.0, "dmg": 3.0, "vision": 0.0, "win": 0.0, "heal": 0.0, "cc": 0.0, "dmg_turret": 6.0, "dmg_taken": 5.0,},
+    "JUNGLE": {"kills": 5.0, "deaths": -5.0, "assists": 6.0, "cs": 4.0, "dmg": 7.0, "vision": 1.0, "win": 0.0, "heal": 0.0, "cc": 2.0, "dmg_turret": 0.0, "dmg_taken": 0.0},
+    "MIDDLE": {"kills": 6.0, "deaths": -5.0, "assists": 4.0, "cs": 5.0, "dmg": 7.0, "vision": 1.0, "win": 0.0, "heal": 0.0, "cc": 2.0, "dmg_turret": 3.0, "dmg_taken": 0.0,},
+    "BOTTOM": {"kills": 6.0, "deaths": -6.0, "assists": 4.0, "cs": 5.0, "dmg": 5.0, "vision": 0.0, "win": 0.0, "heal": 0.0, "cc": 0.0, "dmg_turret": 3.0, "dmg_taken": 1.0,},
+    "UTILITY": {"kills": 0.0, "deaths": -3.0, "assists": 6.0, "cs": 0.0, "dmg": 3.0, "vision": 7.0, "win": 0.0, "heal": 1.0, "cc": 4.0, "dmg_turret": 0.0, "dmg_taken": 2.0,},
 }
 
 def compute_scores(rows, baselines):
@@ -180,7 +190,7 @@ def lambda_handler(event, context):
             matches = cursor.fetchall()
 
         if not matches:
-            return {"statusCode": 200, "body": json.dumps({"message": "No matches to evaluate"})}
+            return response(200, {"message": "No matches to evaluate", "matches_processed": 0})
 
         for m in matches:
             match_id = m["tournament_match_id"]
@@ -219,18 +229,12 @@ def lambda_handler(event, context):
                 cursor.execute(MARK_MATCH_EVALUATED_SQL, (match_id,))
         connection.commit()
 
-        return {
-            "statusCode": 200,
-            "body": json.dumps({
-                "message": "Evaluation completed",
-                "matches_processed": len(matches)
-            })
-        }
+        return response(200, {"message": "Evaluation completed", "matches_processed": len(matches)})
 
     except Exception as e:
         connection.rollback()
         logger.exception("Evaluation failed")
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        return response(500, {"message": "Evaluation failed", "error": str(e)})
 
     finally:
         if connection:
