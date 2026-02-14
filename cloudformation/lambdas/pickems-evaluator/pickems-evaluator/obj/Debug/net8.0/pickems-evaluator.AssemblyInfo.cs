@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("pickems_evaluator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+235dd029b06cc74d6223e5e5b5fb4aab1d8ad05c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5df2fd219b55ead570169acbe46f167b92b55a9d")]
 [assembly: System.Reflection.AssemblyProductAttribute("pickems_evaluator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("pickems_evaluator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

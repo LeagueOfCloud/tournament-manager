@@ -475,7 +475,7 @@ public static class PickemsAnalyser
     {
         if (!MatchesHaveData(matches))
         {
-            return "No Match Data";
+            return -1;
         }
 
         if (matches.Count == 0)
