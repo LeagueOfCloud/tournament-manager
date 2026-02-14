@@ -12,7 +12,8 @@ namespace pickems_evaluator;
 public class Function
 {
 
-    const string tournementMatchesQuery = "SELECT * FROM tournament_matches";
+    const string tournamentMatchesQuery = "SELECT * FROM tournament_matches";
+    const string tournamentConfigQuery = "SELECT * FROM config where name = 'pickem_categories' ";
     const string teamQuery = "SELECT team_id from players p join riot_accounts ra on p.id = ra.player_id where account_puuid =";
     const string playerQuery = "SELECT p.id, ra.account_puuid AS puuid FROM players p LEFT JOIN riot_accounts ra ON ra.player_id = p.id";
     const string playerPuuidQuery = "SELECT account_puuid from riot_accounts where player_id =";
@@ -27,13 +28,16 @@ public class Function
     /// <returns></returns>
     public async Task FunctionHandler(object input, ILambdaContext context)
     {
-        var DBmatches = await DatabaseHelper.ExecuteQueryAsync<TournementMatch>(tournementMatchesQuery, reader => new TournementMatch
+        var DBmatches = await DatabaseHelper.ExecuteQueryAsync<TournementMatch>(tournamentMatchesQuery, reader => new TournementMatch
         {
             Id = (int)reader["id"],
             WinnerTeamId = (int)reader["winner_team_id"],
             TournementMatchId = reader["tournament_match_id"].ToString(),
         });
 
+        var dbTournementConfig = (await DatabaseHelper.ExecuteQueryAsync<string>(tournamentConfigQuery, reader => reader["value"].ToString()))[0];
+        var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var tournamentConfig = JsonSerializer.Deserialize<List<PickemAnswers>>(dbTournementConfig, options);
         Console.WriteLine("Collected matches");
 
         var matches = new List<Match>();
@@ -91,7 +95,7 @@ public class Function
         var profilePickems = new List<Profile>();
         foreach (var profile in profiles)
         {
-            var pickems = await DatabaseHelper.ExecuteQueryAsync<Pickems>($"{pickemsQuery}{profile}", reader => new Pickems
+            var pickems = await DatabaseHelper.ExecuteQueryAsync<PickemsGuess>($"{pickemsQuery}{profile}", reader => new PickemsGuess
             {
                 Id = reader["id"].ToString(),
                 PickemId = reader["pickem_id"].ToString(),
@@ -107,323 +111,83 @@ public class Function
 
         Console.WriteLine("Collected profiles and pickems");
 
-        string answer;
-
-        //most_fb
-        answer = PickemsAnalyser.GetMostFirstBloods(matches);
-        foreach (var profile in profilePickems)
+        if(tournamentConfig is null || tournamentConfig.Count == 0)
         {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "most_fb")?.Value;
-            if (!string.IsNullOrEmpty(guess) && playerIdToPuuid.TryGetValue(guess, out var puuid) && puuid == answer)
-            {
-                profile.Score += 1;
-            }
+            Console.WriteLine("Pickems Config is null or empty please check its correctly set up in the DB");
+            return;
         }
 
-        //highest_kda
-        answer = PickemsAnalyser.GetHighestKDAPlayer(matches);
-        foreach (var profile in profilePickems)
+        if (profilePickems is null || profilePickems.Count == 0)
         {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "highest_kda")?.Value;
-            if (!string.IsNullOrEmpty(guess) && playerIdToPuuid.TryGetValue(guess, out var puuid) && puuid == answer)
-            {
-                profile.Score += 1;
-            }
+            Console.WriteLine("No pickems guess to use skipping evaluation");
+            return;
         }
 
-        //most_deaths_player
-        answer = PickemsAnalyser.GetMostDeathsPlayer(matches);
-        foreach (var profile in profilePickems)
+        if (playerIdToPuuid is null || playerIdToPuuid.Count == 0)
         {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "most_deaths_player")?.Value;
-            if (!string.IsNullOrEmpty(guess) && playerIdToPuuid.TryGetValue(guess, out var puuid) && puuid == answer)
-            {
-                profile.Score += 1;
-            }
+            Console.WriteLine("Error collecting playerIds check RiotAPi config");
+            return;
         }
 
-        //tunnel_vision
-        answer = PickemsAnalyser.GetWorstVisionScorePlayer(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "tunnel_vision")?.Value;
-            if (!string.IsNullOrEmpty(guess) && playerIdToPuuid.TryGetValue(guess, out var puuid) && puuid == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        PickemAnswerHelper pickemsAnswerHelper = new PickemAnswerHelper(tournamentConfig, profilePickems, playerIdToPuuid);
 
-        //most_cs
-        answer = PickemsAnalyser.GetMostCSInSingleGame(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "most_cs")?.Value;
-            if (!string.IsNullOrEmpty(guess) && playerIdToPuuid.TryGetValue(guess, out var puuid) && puuid == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScorePlayerPickem("most_fb", PickemsAnalyser.GetMostFirstBloods(matches));
 
-        //most_kills_team
-        answer = PickemsAnalyser.GetMostKillsTeam(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "most_kills_team")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScorePlayerPickem("highest_kda", PickemsAnalyser.GetHighestKDAPlayer(matches));
 
-        //most_objs_team
-        answer = PickemsAnalyser.GetMostObjectivesTeam(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "most_objs_team")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScorePlayerPickem("most_deaths_player", PickemsAnalyser.GetMostDeathsPlayer(matches));
 
-        //most_deaths_team
-        answer = PickemsAnalyser.GetMostDeathsTeam(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "most_deaths_team")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScorePlayerPickem("tunnel_vision", PickemsAnalyser.GetWorstVisionScorePlayer(matches));
 
-        //demolish_team
-        answer = PickemsAnalyser.GetMostStructureDamageInSingleGame(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "demolish_team")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScorePlayerPickem("most_cs", PickemsAnalyser.GetMostCSInSingleGame(matches));
 
-        //team_pings
-        answer = PickemsAnalyser.GetMostPingsInSingleGame(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "team_pings")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("most_kills_team", PickemsAnalyser.GetMostKillsTeam(matches));
 
-        //most_banned
-        answer = PickemsAnalyser.GetMostBannedChampion(matches);
-        answer = championIdToName[answer];
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "most_banned")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("most_objs_team", PickemsAnalyser.GetMostObjectivesTeam(matches));
 
-        //tankiest_champ
-        answer = PickemsAnalyser.GetChampionTanksMostDamage(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "tankiest_champ")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("most_deaths_team", PickemsAnalyser.GetMostDeathsTeam(matches));
 
-        //deadliest_champ
-        answer = PickemsAnalyser.GetChampionDealtMostDamage(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "deadliest_champ")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("demolish_team", PickemsAnalyser.GetMostStructureDamageInSingleGame(matches));
 
-        //MostDeathsChampion
-        answer = PickemsAnalyser.GetMostDeathsChampion(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "MostDeathsChampion")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("team_pings", PickemsAnalyser.GetMostPingsInSingleGame(matches));
 
-        //long_games
-        answer = PickemsAnalyser.GetGamesLongerThan45Minutes(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "long_games")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("most_banned", championIdToName[PickemsAnalyser.GetMostBannedChampion(matches)]);
 
-        //obj_steals_ovr
-        answer = PickemsAnalyser.GetTotalObjectiveSteals(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "obj_steals_ovr")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("tankiest_champ", PickemsAnalyser.GetChampionTanksMostDamage(matches));
 
-        //pentakill_count
-        answer = PickemsAnalyser.GetTotalPentakills(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "pentakill_count")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("deadliest_champ", PickemsAnalyser.GetChampionDealtMostDamage(matches));
 
-        //short_game
+        pickemsAnswerHelper.ScoreSimplePickem("long_games", PickemsAnalyser.GetGamesLongerThan45Minutes(matches));
 
-        var startAnswer = PickemsAnalyser.GetShortestGameDuration(matches);
-        if (startAnswer < 20)
-        {
-            answer = "15-20";
-        }
-        else if (startAnswer < 30)
-        {
-            answer = "21-30";
-        }
-        else if (startAnswer < 40)
-        {
-            answer = "31-40";
-        }
-        else if (startAnswer < 50)
-        {
-            answer = "41-50";
-        }
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "short_game")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("obj_steals_ovr", PickemsAnalyser.GetTotalObjectiveSteals(matches));
 
-        //gold_diff
-        answer = PickemsAnalyser.GetBiggestGoldDifference(matches);
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "gold_diff")?.Value;
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("pentakill_count", PickemsAnalyser.GetTotalPentakills(matches));
 
-        //finals_champ
-        var raw = Environment.GetEnvironmentVariable("finals_champ");
-        if (!string.IsNullOrWhiteSpace(raw))
+        var shortestDuration = PickemsAnalyser.GetShortestGameDuration(matches);
+        string shortGameAnswer;
+        if (shortestDuration < 20)
         {
-            var champlist = JsonSerializer.Deserialize<string[]>(raw);
-            foreach (var profile in profilePickems)
-            {
-                var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "finals_champ")?.Value;
-                if (champlist.Contains(guess))
-                {
-                    profile.Score += 1;
-                }
-            }
+            shortGameAnswer = "15-20";
         }
-
-        //finals_winner
-        answer = Environment.GetEnvironmentVariable("finals_winner");
-        foreach (var profile in profilePickems)
+        else if (shortestDuration < 30)
         {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "finals_winner")?.Value;
-            if (string.IsNullOrWhiteSpace(guess))
-            {
-                continue;
-            }
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
+            shortGameAnswer = "21-30";
         }
-
-        //most_mvps
-        answer = Environment.GetEnvironmentVariable("most_mvps");
-        foreach (var profile in profilePickems)
+        else if (shortestDuration < 40)
         {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "most_mvps")?.Value;
-            if (string.IsNullOrWhiteSpace(guess))
-            {
-                continue;
-            }
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
+            shortGameAnswer = "31-40";
         }
-
-        //nemi_flashes
-        answer = Environment.GetEnvironmentVariable("nemi_flashes");
-        foreach (var profile in profilePickems)
+        else
         {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "nemi_flashes")?.Value;
-            if (string.IsNullOrWhiteSpace(guess))
-            {
-                continue;
-            }
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
+            shortGameAnswer = "41-50";
         }
+        pickemsAnswerHelper.ScoreSimplePickem("short_game", shortGameAnswer);
 
-        //bard_lane
-        answer = Environment.GetEnvironmentVariable("bard_lane");
-        foreach (var profile in profilePickems)
-        {
-            var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "bard_lane")?.Value;
-            if (string.IsNullOrWhiteSpace(guess))
-            {
-                continue;
-            }
-            if (guess == answer)
-            {
-                profile.Score += 1;
-            }
-        }
+        pickemsAnswerHelper.ScoreSimplePickem("gold_diff", PickemsAnalyser.GetBiggestGoldDifference(matches));
 
-        //finals_champ
-        var reviveRaw = Environment.GetEnvironmentVariable("finals_champ");
-        if (!string.IsNullOrWhiteSpace(raw))
+        foreach (var cfg in tournamentConfig.ToList())
         {
-            var revivelist = JsonSerializer.Deserialize<string[]>(reviveRaw);
-            foreach (var profile in profilePickems)
-            {
-                var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == "revived_champ")?.Value;
-                if (revivelist.Contains(guess))
-                {
-                    profile.Score += 1;
-                }
-            }
+            pickemsAnswerHelper.ScorePickemFromConfigAnswer(cfg.Id);
         }
 
         string scores = "";

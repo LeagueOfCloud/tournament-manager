@@ -1,5 +1,5 @@
 ﻿namespace pickems_evaluator.Models.Database;
-public class Pickems
+public class PickemsGuess
 {
     public string Id { get; set; }
 

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("pickems_evaluator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dde326f3e2ed985db8b53e448f5cffc361de502c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+50c24884dcf8a80bb6ce29fc137695f94fd9164b")]
 [assembly: System.Reflection.AssemblyProductAttribute("pickems_evaluator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("pickems_evaluator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

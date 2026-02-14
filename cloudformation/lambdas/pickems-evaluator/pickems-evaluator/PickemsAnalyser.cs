@@ -7,6 +7,11 @@ public static class PickemsAnalyser
    
     public static string GetMostFirstBloods(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         var firstBloodCounts = new Dictionary<string, int>();
 
         foreach (var match in matches)
@@ -37,6 +42,11 @@ public static class PickemsAnalyser
     }
     public static string GetHighestKDAPlayer(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         var participantStats = new Dictionary<string, (int kills, int deaths, int assists)>();
 
         foreach (var match in matches)
@@ -71,6 +81,11 @@ public static class PickemsAnalyser
     // Which player will die the most?
     public static string GetMostDeathsPlayer(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         var participantDeaths = new Dictionary<string, int>();
 
         foreach (var match in matches)
@@ -91,6 +106,11 @@ public static class PickemsAnalyser
     // Which player will have the worst vision score overall?
     public static string GetWorstVisionScorePlayer(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         var participantVision = new Dictionary<string, int>();
 
         foreach (var match in matches)
@@ -111,6 +131,11 @@ public static class PickemsAnalyser
     // Which player will have the most CS in a single game?
     public static string GetMostCSInSingleGame(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         int maxCS = 0;
         string participantId = "";
 
@@ -133,6 +158,11 @@ public static class PickemsAnalyser
     // Which team will have the most kills overall?
     public static string GetMostKillsTeam(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         var teamKills = new Dictionary<int, int>();
 
         foreach (var match in matches)
@@ -153,6 +183,11 @@ public static class PickemsAnalyser
     // Which team will slay the most objectives overall?
     public static string GetMostObjectivesTeam(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         var teamObjectives = new Dictionary<int, int>();
 
         foreach (var match in matches)
@@ -176,6 +211,11 @@ public static class PickemsAnalyser
     // Which team will have the most deaths overall?
     public static string GetMostDeathsTeam(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         var teamDeaths = new Dictionary<int, int>();
 
         foreach (var match in matches)
@@ -196,6 +236,11 @@ public static class PickemsAnalyser
     // Which team will deal the most damage to structures in a single game?
     public static string GetMostStructureDamageInSingleGame(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         int maxDamage = 0;
         int teamId = 0;
 
@@ -225,6 +270,11 @@ public static class PickemsAnalyser
     // Which team will have the most pings in a single game?
     public static string GetMostPingsInSingleGame(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         int maxPings = 0;
         int teamId = 0;
 
@@ -254,6 +304,11 @@ public static class PickemsAnalyser
     // Who will be the most banned champion?
     public static string GetMostBannedChampion(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         var championBans = new Dictionary<int, int>();
 
         foreach (var match in matches)
@@ -280,6 +335,11 @@ public static class PickemsAnalyser
     // Which champion will tank the most damage in a single game?
     public static string GetChampionTanksMostDamage(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         int maxDamage = 0;
         int championId = 0;
 
@@ -301,6 +361,11 @@ public static class PickemsAnalyser
     // Which champion will deal the most damage in a single game?
     public static string GetChampionDealtMostDamage(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         int maxDamage = 0;
         int championId = 0;
 
@@ -322,6 +387,11 @@ public static class PickemsAnalyser
     // What's a champion that will be revived? (has most deaths)
     public static string GetMostDeathsChampion(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         var championDeaths = new Dictionary<int, int>();
 
         foreach (var match in matches)
@@ -342,6 +412,11 @@ public static class PickemsAnalyser
     // How many games will last longer than 45 minutes?
     public static string GetGamesLongerThan45Minutes(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         int count = 0;
 
         foreach (var match in matches)
@@ -356,6 +431,11 @@ public static class PickemsAnalyser
     // How many objective steals will there be overall?
     public static string GetTotalObjectiveSteals(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         int totalSteals = 0;
 
         foreach (var match in matches)
@@ -372,6 +452,11 @@ public static class PickemsAnalyser
     // How many total pentakills will there be?
     public static string GetTotalPentakills(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         int totalPentas = 0;
 
         foreach (var match in matches)
@@ -388,6 +473,11 @@ public static class PickemsAnalyser
     // How long will the shortest game be in minutes?
     public static double GetShortestGameDuration(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         if (matches.Count == 0)
             return 0;
 
@@ -400,6 +490,11 @@ public static class PickemsAnalyser
     // What will be the biggest gold difference between teams in a game?
     public static string GetBiggestGoldDifference(List<Match> matches)
     {
+        if (!MatchesHaveData(matches))
+        {
+            return "No Match Data";
+        }
+
         int maxGoldDifference = 0;
 
         foreach (var match in matches)
@@ -425,5 +520,10 @@ public static class PickemsAnalyser
         }
 
         return maxGoldDifference.ToString();
+    }
+
+    private static bool MatchesHaveData(List<Match> matches)
+    {
+        return matches != null && matches.Count > 0;
     }
 }

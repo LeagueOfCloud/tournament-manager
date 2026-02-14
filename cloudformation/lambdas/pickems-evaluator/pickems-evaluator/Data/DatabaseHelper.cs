@@ -1,12 +1,12 @@
 using System.Data;
-using System.Runtime.InteropServices.JavaScript;
-using System.Xml.Linq;
 using MySqlConnector;
 
 namespace pickems_evaluator.Data;
 
 public static class DatabaseHelper
-{    private static MySqlConnectionStringBuilder Connection;
+{
+
+    private static MySqlConnectionStringBuilder Connection;
 
     public static async Task<List<T>> ExecuteQueryAsync<T>(string query, Func<IDataReader, T> mapper)
     {

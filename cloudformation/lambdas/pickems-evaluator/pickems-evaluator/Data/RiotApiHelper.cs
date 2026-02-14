@@ -110,90 +110,90 @@ public static class RiotApiHelper
         return teams;
     }
 
-        private static int GetBasicPingsTotal(JsonElement participantElement)
+    private static int GetBasicPingsTotal(JsonElement participantElement)
+    {
+        int total = 0;
+
+        if (participantElement.TryGetProperty("allInPings", out var allInPings))
+            total += allInPings.GetInt32();
+        if (participantElement.TryGetProperty("assistMePings", out var assistMePings))
+            total += assistMePings.GetInt32();
+        if (participantElement.TryGetProperty("basicPings", out var basicPings))
+            total += basicPings.GetInt32();
+        if (participantElement.TryGetProperty("commandPings", out var commandPings))
+            total += commandPings.GetInt32();
+        if (participantElement.TryGetProperty("dangerPings", out var dangerPings))
+            total += dangerPings.GetInt32();
+        if (participantElement.TryGetProperty("enemyMissingPings", out var enemyMissingPings))
+            total += enemyMissingPings.GetInt32();
+        if (participantElement.TryGetProperty("enemyVisionPings", out var enemyVisionPings))
+            total += enemyVisionPings.GetInt32();
+        if (participantElement.TryGetProperty("getBackPings", out var getBackPings))
+            total += getBackPings.GetInt32();
+        if (participantElement.TryGetProperty("holdPings", out var holdPings))
+            total += holdPings.GetInt32();
+        if (participantElement.TryGetProperty("needVisionPings", out var needVisionPings))
+            total += needVisionPings.GetInt32();
+        if (participantElement.TryGetProperty("onMyWayPings", out var onMyWayPings))
+            total += onMyWayPings.GetInt32();
+        if (participantElement.TryGetProperty("pushPings", out var pushPings))
+            total += pushPings.GetInt32();
+        if (participantElement.TryGetProperty("retreatPings", out var retreatPings))
+            total += retreatPings.GetInt32();
+        if (participantElement.TryGetProperty("visionClearedPings", out var visionClearedPings))
+            total += visionClearedPings.GetInt32();
+
+        return total;
+    }
+
+    public static async Task<Dictionary<string, string>> FetchChampionDataAsync()
+    {
+        var championIdToName = new Dictionary<string, string>();
+
+        // Fetch the latest patch version
+        var latestVersion = await GetLatestPatchVersionAsync();
+        string url = $"https://ddragon.leagueoflegends.com/cdn/{latestVersion}/data/en_US/champion.json";
+
+        using var client = new HttpClient();
+        var response = await client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        var data = root.GetProperty("data");
+
+        foreach (var property in data.EnumerateObject())
         {
-            int total = 0;
+            var championId = property.Value.GetProperty("key").GetString();
+            var championName = property.Value.GetProperty("id").GetString();
 
-            if (participantElement.TryGetProperty("allInPings", out var allInPings))
-                total += allInPings.GetInt32();
-            if (participantElement.TryGetProperty("assistMePings", out var assistMePings))
-                total += assistMePings.GetInt32();
-            if (participantElement.TryGetProperty("basicPings", out var basicPings))
-                total += basicPings.GetInt32();
-            if (participantElement.TryGetProperty("commandPings", out var commandPings))
-                total += commandPings.GetInt32();
-            if (participantElement.TryGetProperty("dangerPings", out var dangerPings))
-                total += dangerPings.GetInt32();
-            if (participantElement.TryGetProperty("enemyMissingPings", out var enemyMissingPings))
-                total += enemyMissingPings.GetInt32();
-            if (participantElement.TryGetProperty("enemyVisionPings", out var enemyVisionPings))
-                total += enemyVisionPings.GetInt32();
-            if (participantElement.TryGetProperty("getBackPings", out var getBackPings))
-                total += getBackPings.GetInt32();
-            if (participantElement.TryGetProperty("holdPings", out var holdPings))
-                total += holdPings.GetInt32();
-            if (participantElement.TryGetProperty("needVisionPings", out var needVisionPings))
-                total += needVisionPings.GetInt32();
-            if (participantElement.TryGetProperty("onMyWayPings", out var onMyWayPings))
-                total += onMyWayPings.GetInt32();
-            if (participantElement.TryGetProperty("pushPings", out var pushPings))
-                total += pushPings.GetInt32();
-            if (participantElement.TryGetProperty("retreatPings", out var retreatPings))
-                total += retreatPings.GetInt32();
-            if (participantElement.TryGetProperty("visionClearedPings", out var visionClearedPings))
-                total += visionClearedPings.GetInt32();
-
-            return total;
+            if (!string.IsNullOrEmpty(championId) && !string.IsNullOrEmpty(championName))
+            {
+                championIdToName[championId] = championName;
+            }
         }
 
-        public static async Task<Dictionary<string, string>> FetchChampionDataAsync()
+        return championIdToName;
+    }
+
+    private static async Task<string> GetLatestPatchVersionAsync()
+    {
+        string url = "https://ddragon.leagueoflegends.com/api/versions.json";
+
+        using var client = new HttpClient();
+        var response = await client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        if (root.GetArrayLength() > 0)
         {
-            var championIdToName = new Dictionary<string, string>();
-
-            // Fetch the latest patch version
-            var latestVersion = await GetLatestPatchVersionAsync();
-            string url = $"https://ddragon.leagueoflegends.com/cdn/{latestVersion}/data/en_US/champion.json";
-
-            using var client = new HttpClient();
-            var response = await client.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            var data = root.GetProperty("data");
-
-            foreach (var property in data.EnumerateObject())
-            {
-                var championId = property.Value.GetProperty("key").GetString();
-                var championName = property.Value.GetProperty("id").GetString();
-
-                if (!string.IsNullOrEmpty(championId) && !string.IsNullOrEmpty(championName))
-                {
-                    championIdToName[championId] = championName;
-                }
-            }
-
-            return championIdToName;
+            return root[0].GetString();
         }
 
-        private static async Task<string> GetLatestPatchVersionAsync()
-        {
-            string url = "https://ddragon.leagueoflegends.com/api/versions.json";
-
-            using var client = new HttpClient();
-            var response = await client.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            if (root.GetArrayLength() > 0)
-            {
-                return root[0].GetString();
-            }
-
-            return null;
+        return null;
     }
 }
