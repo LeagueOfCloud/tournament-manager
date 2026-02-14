@@ -13,3 +13,6 @@ CREATE TABLE IF NOT EXISTS tournament_db.players (
 
 ALTER TABLE tournament_db.players
 ADD COLUMN cost INT;
+
+ALTER TABLE players
+ADD COLUMN score FLOAT DEFAULT 0;
