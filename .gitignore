@@ -2,3 +2,14 @@
 .vs
 .env
 notebooks
+
+cloudformation/lambdas/pickems-evaluator/**/bin/
+cloudformation/lambdas/pickems-evaluator/**/obj/
+cloudformation/lambdas/pickems-evaluator/**/.vs/
+cloudformation/lambdas/pickems-evaluator/**/*.user
+cloudformation/lambdas/pickems-evaluator/**/*.suo
+cloudformation/lambdas/pickems-evaluator/**/*.userprefs
+cloudformation/lambdas/pickems-evaluator/**/*.vspscc
+cloudformation/lambdas/pickems-evaluator/**/packages/
+cloudformation/lambdas/pickems-evaluator/**/*.nupkg
+cloudformation/lambdas/pickems-evaluator/**/.idea/
