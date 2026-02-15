@@ -61,24 +61,15 @@ UPSERT_PROCESSED_MATCH_DATA_SQL = """
 
 
 def get_connection() -> pymysql.Connection:
-    global connection
-    if connection is None:
-        connection = pymysql.connect(
-            host=os.environ["DB_HOST"],
-            port=int(os.environ["DB_PORT"]),
-            user=os.environ["DB_USER"],
-            password=os.environ["DB_PASSWORD"],
-            database=os.environ["DB_NAME"],
-            cursorclass=pymysql.cursors.DictCursor,
-        )
+    connection = pymysql.connect(
+        host=os.environ["DB_HOST"],
+        port=int(os.environ["DB_PORT"]),
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        database=os.environ["DB_NAME"],
+        cursorclass=pymysql.cursors.DictCursor,
+    )
     return connection
-
-
-def close_connection():
-    connection = get_connection()
-    if connection:
-        connection.close()
-    connection = None
 
 
 def ensure_json(data):
@@ -213,9 +204,10 @@ def send_message_to_sqs(
 def lambda_handler(event, context):
     processed_matches = 0
     inserted_rows = 0
-    connection = get_connection()
+    connection = None
 
     try:
+        connection = get_connection()
         matches = fetch_unprocessed_matches(connection)
         if not matches:
             logger.info("No unprocessed matches found.")
@@ -255,8 +247,6 @@ def lambda_handler(event, context):
                     insert_participant_rows(connection, rows)
                     inserted_rows += len(rows)
 
-                mark_match_processed(connection, match_id)
-                processed_matches += 1
             except Exception as e:
                 logger.warning("Sent message to failed queue")
                 send_message_to_sqs(
@@ -267,6 +257,9 @@ def lambda_handler(event, context):
                         "timestamp": datetime.now().timestamp(),
                     }
                 )
+
+            mark_match_processed(connection, match_id)
+            processed_matches += 1
 
         connection.commit()
 
@@ -287,7 +280,8 @@ def lambda_handler(event, context):
         }
 
     finally:
-        close_connection()
+        if connection and connection.open:
+            connection.close()
 
     return {
         "statusCode": 200,
