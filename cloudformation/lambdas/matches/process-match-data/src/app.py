@@ -3,11 +3,15 @@ import os
 import pymysql
 import logging
 import requests
+import traceback
+import boto3
+from datetime import datetime
 from typing import List, Dict, Any, Tuple, Set
 
 connection = None
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+sqs = boto3.client("sqs")
 
 GET_MATCH_IDS_SQL = """
     SELECT match_id, match_data
@@ -57,24 +61,15 @@ UPSERT_PROCESSED_MATCH_DATA_SQL = """
 
 
 def get_connection() -> pymysql.Connection:
-    global connection
-    if connection is None:
-        connection = pymysql.connect(
-            host=os.environ["DB_HOST"],
-            port=int(os.environ["DB_PORT"]),
-            user=os.environ["DB_USER"],
-            password=os.environ["DB_PASSWORD"],
-            database=os.environ["DB_NAME"],
-            cursorclass=pymysql.cursors.DictCursor,
-        )
+    connection = pymysql.connect(
+        host=os.environ["DB_HOST"],
+        port=int(os.environ["DB_PORT"]),
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        database=os.environ["DB_NAME"],
+        cursorclass=pymysql.cursors.DictCursor,
+    )
     return connection
-
-
-def close_connection():
-    connection = get_connection()
-    if connection:
-        connection.close()
-    connection = None
 
 
 def ensure_json(data):
@@ -189,12 +184,30 @@ def extract_rows_for_known_puuids(
     return rows
 
 
+def send_message_to_sqs(
+    message_body: dict | str,
+) -> dict:
+    if isinstance(message_body, dict):
+        message_body = json.dumps(message_body)
+
+    try:
+        response = sqs.send_message(
+            QueueUrl=os.environ["SQS_FAIL_URL"],
+            MessageBody=message_body,
+        )
+        return response
+
+    except (BotoCoreError, ClientError) as e:
+        raise RuntimeError(f"Failed to send message to SQS: {e}")
+
+
 def lambda_handler(event, context):
     processed_matches = 0
     inserted_rows = 0
-    connection = get_connection()
+    connection = None
 
     try:
+        connection = get_connection()
         matches = fetch_unprocessed_matches(connection)
         if not matches:
             logger.info("No unprocessed matches found.")
@@ -228,10 +241,22 @@ def lambda_handler(event, context):
                 mark_match_processed(connection, match_id)
                 continue
 
-            rows = extract_rows_for_known_puuids(match_id, payload, known)
-            if rows:
-                insert_participant_rows(connection, rows)
-                inserted_rows += len(rows)
+            try:
+                rows = extract_rows_for_known_puuids(match_id, payload, known)
+                if rows:
+                    insert_participant_rows(connection, rows)
+                    inserted_rows += len(rows)
+
+            except Exception as e:
+                logger.warning("Sent message to failed queue")
+                send_message_to_sqs(
+                    {
+                        "rows": rows,
+                        "error": traceback.format_exc(),
+                        "short_error": str(e),
+                        "timestamp": datetime.now().timestamp(),
+                    }
+                )
 
             mark_match_processed(connection, match_id)
             processed_matches += 1
@@ -240,7 +265,9 @@ def lambda_handler(event, context):
 
     except Exception as e:
         connection.rollback()
-        logger.exception("Error while processing matches.")
+        logger.exception(
+            "Error while processing matches. Check failed queue for more information"
+        )
         return {
             "statusCode": 500,
             "headers": {
@@ -253,7 +280,8 @@ def lambda_handler(event, context):
         }
 
     finally:
-        close_connection()
+        if connection and connection.open:
+            connection.close()
 
     return {
         "statusCode": 200,

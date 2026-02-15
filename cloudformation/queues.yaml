@@ -1,0 +1,11 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  FailedProcessedMatchesQueue:
+    Type: AWS::SQS::Queue
+
+Outputs:
+  FailedProcessedMatchesQueueUrl:
+    Value: !Ref FailedProcessedMatchesQueue
+  FailedProcessedMatchesQueueArn:
+    Value: !GetAtt FailedProcessedMatchesQueue.Arn
