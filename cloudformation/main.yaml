@@ -443,6 +443,7 @@ Resources:
     Properties:
       CodeUri: lambdas/matches/process-match-data/src/
       Handler: app.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
       Timeout: 60
       Environment:
         Variables:
