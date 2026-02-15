@@ -3,11 +3,15 @@ import os
 import pymysql
 import logging
 import requests
+import traceback
+import boto3
+from datetime import datetime
 from typing import List, Dict, Any, Tuple, Set
 
 connection = None
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+sqs = boto3.client("sqs")
 
 GET_MATCH_IDS_SQL = """
     SELECT match_id, match_data
@@ -189,6 +193,23 @@ def extract_rows_for_known_puuids(
     return rows
 
 
+def send_message_to_sqs(
+    message_body: dict | str,
+) -> dict:
+    if isinstance(message_body, dict):
+        message_body = json.dumps(message_body)
+
+    try:
+        response = sqs.send_message(
+            QueueUrl=os.environ["SQS_FAIL_URL"],
+            MessageBody=message_body,
+        )
+        return response
+
+    except (BotoCoreError, ClientError) as e:
+        raise RuntimeError(f"Failed to send message to SQS: {e}")
+
+
 def lambda_handler(event, context):
     processed_matches = 0
     inserted_rows = 0
@@ -228,19 +249,32 @@ def lambda_handler(event, context):
                 mark_match_processed(connection, match_id)
                 continue
 
-            rows = extract_rows_for_known_puuids(match_id, payload, known)
-            if rows:
-                insert_participant_rows(connection, rows)
-                inserted_rows += len(rows)
+            try:
+                rows = extract_rows_for_known_puuids(match_id, payload, known)
+                if rows:
+                    insert_participant_rows(connection, rows)
+                    inserted_rows += len(rows)
 
-            mark_match_processed(connection, match_id)
-            processed_matches += 1
+                mark_match_processed(connection, match_id)
+                processed_matches += 1
+            except Exception as e:
+                logger.warning("Sent message to failed queue")
+                send_message_to_sqs(
+                    {
+                        "rows": rows,
+                        "error": traceback.format_exc(),
+                        "short_error": str(e),
+                        "timestamp": datetime.now().timestamp(),
+                    }
+                )
 
         connection.commit()
 
     except Exception as e:
         connection.rollback()
-        logger.exception("Error while processing matches.")
+        logger.exception(
+            "Error while processing matches. Check failed queue for more information"
+        )
         return {
             "statusCode": 500,
             "headers": {

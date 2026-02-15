@@ -52,6 +52,11 @@ Resources:
       Parameters:
         ConnectionsTable: !GetAtt ConnectionsTable.Arn
 
+  Queues:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./queues.yaml
+
 
   ###########################################################
   # REST-API DEFINITION                                     #
@@ -123,6 +128,15 @@ Resources:
                     - secretsmanager:*
                   Resource:
                     - !Ref TwitchAppSecretArn
+          - PolicyName: QueueAccess
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - sqs:SendMessage
+                  Resource:
+                    - !GetAtt Queues.Outputs.FailedProcessedMatchesQueueArn
 
   ApiAuthenticatorLambda:
     Type: AWS::Serverless::Function
@@ -430,6 +444,9 @@ Resources:
       CodeUri: lambdas/matches/process-match-data/src/
       Handler: app.lambda_handler
       Timeout: 60
+      Environment:
+        Variables:
+          SQS_FAIL_URL: !GetAtt Queues.Outputs.FailedProcessedMatchesQueueUrl
 
   ###########################################################
   # LEAGUE STATS LAMBDAS                                    #
