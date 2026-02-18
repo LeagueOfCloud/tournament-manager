@@ -1,5 +1,6 @@
 using Amazon.Lambda.Core;
 using System.Text.Json;
+using System.Linq;
 using pickems_evaluator.Data;
 using pickems_evaluator.Models.Database;
 using pickems_evaluator.Models.RiotApi;
@@ -196,17 +197,20 @@ public class Function
             scores += $"UPDATE profiles SET pickems_score = {profile.Score} where id = {profile.Id};";
         }
 
-        string pickemsAnswers = "";
-        foreach (var answer in PickemAnswerHelper.PickemAnswers)
+        await DatabaseHelper.ExecuteUpdateAsync(scores);
+
+        if (PickemAnswerHelper.PickemAnswers != null && PickemAnswerHelper.PickemAnswers.Count > 0)
         {
-            pickemsAnswers += $"UPSERT INTO pickems_answers (id, answer) VALUES ('{answer.Key}', '{answer.Value}');";
+            var values = PickemAnswerHelper.PickemAnswers
+                .Select(kv => $"('{kv.Key.Replace("'","''")}', '{kv.Value.Replace("'","''")}')");
+
+            var upsert = "INSERT INTO pickems_answers (id, answer) VALUES "
+                + string.Join(", ", values)
+                + " ON DUPLICATE KEY UPDATE answer = VALUES(answer);";
+
+            await DatabaseHelper.ExecuteUpdateAsync(upsert);
         }
 
-        await DatabaseHelper.ExecuteUpdateAsync(scores);
-        if (!string.IsNullOrEmpty(pickemsAnswers))
-        {
-            await DatabaseHelper.ExecuteUpdateAsync(pickemsAnswers);
-        }
         Console.WriteLine("Scores updated in database");
     }
 }
