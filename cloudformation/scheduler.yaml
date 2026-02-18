@@ -104,7 +104,7 @@ Resources:
     Type: AWS::Scheduler::Schedule
     Properties:
       Name: PickemsEvaluatorSchedule
-      ScheduleExpression: rate(1 day)
+      ScheduleExpression: rate(5 minutes)
       FlexibleTimeWindow:
         Mode: "OFF"
       Target:

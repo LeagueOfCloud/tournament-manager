@@ -196,7 +196,17 @@ public class Function
             scores += $"UPDATE profiles SET pickems_score = {profile.Score} where id = {profile.Id};";
         }
 
+        string pickemsAnswers = "";
+        foreach (var answer in PickemAnswerHelper.PickemAnswers)
+        {
+            pickemsAnswers += $"INSERT INTO pickem_answers (pickem_id, answer) VALUES ('{answer.Key}', '{answer.Value}');";
+        }
+
         await DatabaseHelper.ExecuteUpdateAsync(scores);
+        if (!string.IsNullOrEmpty(pickemsAnswers))
+        {
+            await DatabaseHelper.ExecuteUpdateAsync(pickemsAnswers);
+        }
         Console.WriteLine("Scores updated in database");
     }
 }
