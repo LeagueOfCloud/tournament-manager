@@ -199,7 +199,7 @@ public class Function
         string pickemsAnswers = "";
         foreach (var answer in PickemAnswerHelper.PickemAnswers)
         {
-            pickemsAnswers += $"INSERT INTO pickems_answers (id, answer) VALUES ('{answer.Key}', '{answer.Value}');";
+            pickemsAnswers += $"UPSERT INTO pickems_answers (id, answer) VALUES ('{answer.Key}', '{answer.Value}');";
         }
 
         await DatabaseHelper.ExecuteUpdateAsync(scores);
