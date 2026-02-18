@@ -25,7 +25,8 @@ public class PickemAnswerHelper
         var cfg = TournamentConfig.First(x => x.Id == id);
         var score = cfg.Score;
 
-        PickemAnswers[id] = answer;
+        var answerPlayerId = PlayerIdToPuuid.FirstOrDefault(kv => kv.Value == answer).Key;
+        PickemAnswers[id] = string.IsNullOrEmpty(answerPlayerId) ? answer : answerPlayerId;
 
         foreach (var profile in ProfilePickems)
         {
