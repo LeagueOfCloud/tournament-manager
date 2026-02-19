@@ -11,6 +11,8 @@ public class PickemAnswerHelper
 
     Dictionary<string, string> PlayerIdToPuuid;
 
+    public static Dictionary<string, string> PickemAnswers { get; set; } = new Dictionary<string, string>();
+
     public PickemAnswerHelper(List<PickemAnswers> tournamentConfig, List<Profile> profilePickems, Dictionary<string, string> playerIdToPuuid)
     {
         TournamentConfig = tournamentConfig;
@@ -22,6 +24,9 @@ public class PickemAnswerHelper
     {
         var cfg = TournamentConfig.First(x => x.Id == id);
         var score = cfg.Score;
+
+        var answerPlayerId = PlayerIdToPuuid.FirstOrDefault(kv => kv.Value == answer).Key;
+        PickemAnswers[id] = string.IsNullOrEmpty(answerPlayerId) ? answer : answerPlayerId;
 
         foreach (var profile in ProfilePickems)
         {
@@ -47,6 +52,8 @@ public class PickemAnswerHelper
         }
         var score = cfg.Score;
 
+        PickemAnswers[id] = answer;
+
         foreach (var profile in ProfilePickems)
         {
             var guess = profile.Pickems.FirstOrDefault(p => p.PickemId == id)?.Value;
@@ -69,6 +76,8 @@ public class PickemAnswerHelper
         }
         var score = cfg.Score;
         var answers = cfg.Answer.Split(',');
+
+        PickemAnswers[id] = cfg.Answer;
 
         foreach (var profile in ProfilePickems)
         {

@@ -1,5 +1,6 @@
 using Amazon.Lambda.Core;
 using System.Text.Json;
+using System.Linq;
 using pickems_evaluator.Data;
 using pickems_evaluator.Models.Database;
 using pickems_evaluator.Models.RiotApi;
@@ -153,9 +154,9 @@ public class Function
 
         pickemsAnswerHelper.ScoreSimplePickem("most_banned", championIdToName[PickemsAnalyser.GetMostBannedChampion(matches)]);
 
-        pickemsAnswerHelper.ScoreSimplePickem("tankiest_champ", PickemsAnalyser.GetChampionTanksMostDamage(matches));
+        pickemsAnswerHelper.ScoreSimplePickem("tankiest_champ", championIdToName[PickemsAnalyser.GetChampionTanksMostDamage(matches)]);
 
-        pickemsAnswerHelper.ScoreSimplePickem("deadliest_champ", PickemsAnalyser.GetChampionDealtMostDamage(matches));
+        pickemsAnswerHelper.ScoreSimplePickem("deadliest_champ", championIdToName[PickemsAnalyser.GetChampionDealtMostDamage(matches)]);
 
         pickemsAnswerHelper.ScoreSimplePickem("long_games", PickemsAnalyser.GetGamesLongerThan45Minutes(matches));
 
@@ -197,6 +198,19 @@ public class Function
         }
 
         await DatabaseHelper.ExecuteUpdateAsync(scores);
+
+        if (PickemAnswerHelper.PickemAnswers != null && PickemAnswerHelper.PickemAnswers.Count > 0)
+        {
+            var values = PickemAnswerHelper.PickemAnswers
+                .Select(kv => $"('{kv.Key.Replace("'","''")}', '{kv.Value.Replace("'","''")}')");
+
+            var upsert = "INSERT INTO pickems_answers (id, answer) VALUES "
+                + string.Join(", ", values)
+                + " ON DUPLICATE KEY UPDATE answer = VALUES(answer);";
+
+            await DatabaseHelper.ExecuteUpdateAsync(upsert);
+        }
+
         Console.WriteLine("Scores updated in database");
     }
 }
