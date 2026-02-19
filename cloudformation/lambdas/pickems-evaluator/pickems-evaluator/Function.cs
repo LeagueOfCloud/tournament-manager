@@ -1,6 +1,7 @@
 using Amazon.Lambda.Core;
 using System.Text.Json;
 using System.Linq;
+using MySqlConnector;
 using pickems_evaluator.Data;
 using pickems_evaluator.Models.Database;
 using pickems_evaluator.Models.RiotApi;
