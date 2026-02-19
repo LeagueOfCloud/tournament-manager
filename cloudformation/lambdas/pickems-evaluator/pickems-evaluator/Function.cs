@@ -15,11 +15,11 @@ public class Function
 
     const string tournamentMatchesQuery = "SELECT * FROM tournament_matches";
     const string tournamentConfigQuery = "SELECT * FROM config where name = 'pickem_categories' ";
-    const string teamQuery = "SELECT team_id from players p join riot_accounts ra on p.id = ra.player_id where account_puuid =";
+    const string teamQuery = "SELECT team_id from players p join riot_accounts ra on p.id = ra.player_id where account_puuid = @puuid";
     const string playerQuery = "SELECT p.id, ra.account_puuid AS puuid FROM players p LEFT JOIN riot_accounts ra ON ra.player_id = p.id";
-    const string playerPuuidQuery = "SELECT account_puuid from riot_accounts where player_id =";
+    const string playerPuuidQuery = "SELECT account_puuid from riot_accounts where player_id = @playerId";
     const string profileQuery = "SELECT * FROM profiles";
-    const string pickemsQuery = "SELECT * FROM pickems where user_id =";
+    const string pickemsQuery = "SELECT * FROM pickems where user_id = @userId";
 
     /// <summary>
     /// A simple function that takes a string and does a ToUpper
@@ -46,7 +46,10 @@ public class Function
         {
             matches.Add(await RiotApiHelper.FetchMatchDataAsync(match.TournementMatchId));
 
-            var team1Id = await DatabaseHelper.ExecuteQueryAsync<int>($"{teamQuery}'{matches[matches.Count - 1].Participants[0].ParticipantId}'", reader => (int)reader["team_id"]);
+            var team1Id = await DatabaseHelper.ExecuteQueryAsync<int>(
+                teamQuery,
+                new[] { new MySqlParameter("@puuid", matches[matches.Count - 1].Participants[0].ParticipantId) },
+                reader => (int)reader["team_id"]);
             matches[matches.Count - 1].Teams[0].TeamId = team1Id[0];
             matches[matches.Count - 1].Participants[0].TeamId = team1Id[0];
             matches[matches.Count - 1].Participants[1].TeamId = team1Id[0];
@@ -54,7 +57,10 @@ public class Function
             matches[matches.Count - 1].Participants[3].TeamId = team1Id[0];
             matches[matches.Count - 1].Participants[4].TeamId = team1Id[0];
 
-            var team2Id = await DatabaseHelper.ExecuteQueryAsync<int>($"{teamQuery}'{matches[matches.Count - 1].Participants[9].ParticipantId}'", reader => (int)reader["team_id"]);
+            var team2Id = await DatabaseHelper.ExecuteQueryAsync<int>(
+                teamQuery,
+                new[] { new MySqlParameter("@puuid", matches[matches.Count - 1].Participants[9].ParticipantId) },
+                reader => (int)reader["team_id"]);
             matches[matches.Count - 1].Teams[1].TeamId = team2Id[0];
             matches[matches.Count - 1].Participants[5].TeamId = team2Id[0];
             matches[matches.Count - 1].Participants[6].TeamId = team2Id[0];
@@ -96,12 +102,15 @@ public class Function
         var profilePickems = new List<Profile>();
         foreach (var profile in profiles)
         {
-            var pickems = await DatabaseHelper.ExecuteQueryAsync<PickemsGuess>($"{pickemsQuery}{profile}", reader => new PickemsGuess
-            {
-                Id = reader["id"].ToString(),
-                PickemId = reader["pickem_id"].ToString(),
-                Value = reader["value"].ToString(),
-            });
+            var pickems = await DatabaseHelper.ExecuteQueryAsync<PickemsGuess>(
+                pickemsQuery,
+                new[] { new MySqlParameter("@userId", profile) },
+                reader => new PickemsGuess
+                {
+                    Id = reader["id"].ToString(),
+                    PickemId = reader["pickem_id"].ToString(),
+                    Value = reader["value"].ToString(),
+                });
             profilePickems.Add(new Profile
             {
                 Id = profile,
@@ -191,24 +200,29 @@ public class Function
             pickemsAnswerHelper.ScorePickemFromConfigAnswer(cfg.Id);
         }
 
-        string scores = "";
         foreach (var profile in profilePickems)
         {
-            scores += $"UPDATE profiles SET pickems_score = {profile.Score} where id = {profile.Id};";
+            var updateProfileQuery = "UPDATE profiles SET pickems_score = @score WHERE id = @id";
+            await DatabaseHelper.ExecuteUpdateAsync(
+                updateProfileQuery,
+                new[] {
+                    new MySqlParameter("@score", profile.Score),
+                    new MySqlParameter("@id", profile.Id)
+                });
         }
-
-        await DatabaseHelper.ExecuteUpdateAsync(scores);
 
         if (PickemAnswerHelper.PickemAnswers != null && PickemAnswerHelper.PickemAnswers.Count > 0)
         {
-            var values = PickemAnswerHelper.PickemAnswers
-                .Select(kv => $"('{kv.Key.Replace("'","''")}', '{kv.Value.Replace("'","''")}')");
-
-            var upsert = "INSERT INTO pickems_answers (id, answer) VALUES "
-                + string.Join(", ", values)
-                + " ON DUPLICATE KEY UPDATE answer = VALUES(answer);";
-
-            await DatabaseHelper.ExecuteUpdateAsync(upsert);
+            foreach (var answer in PickemAnswerHelper.PickemAnswers)
+            {
+                var upsertQuery = "INSERT INTO pickems_answers (id, answer) VALUES (@id, @answer) ON DUPLICATE KEY UPDATE answer = VALUES(answer);";
+                await DatabaseHelper.ExecuteUpdateAsync(
+                    upsertQuery,
+                    new[] {
+                        new MySqlParameter("@id", answer.Key),
+                        new MySqlParameter("@answer", answer.Value)
+                    });
+            }
         }
 
         Console.WriteLine("Scores updated in database");
