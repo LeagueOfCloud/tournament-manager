@@ -38,6 +38,37 @@ public static class DatabaseHelper
         return results;
     }
 
+    public static async Task<List<T>> ExecuteQueryAsync<T>(string query, MySqlParameter[] parameters, Func<IDataReader, T> mapper)
+    {
+        if (Connection is null)
+        {
+            SetDatabaseConnection();
+        }
+
+        var results = new List<T>();
+
+        try
+        {
+            await using var connection = new MySqlConnection(Connection.ConnectionString);
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText = query;
+            command.Parameters.AddRange(parameters);
+            await using var reader = await command.ExecuteReaderAsync();
+            while (reader.Read())
+            {
+                results.Add(mapper(reader));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database error: {ex.Message}");
+            throw;
+        }
+
+        return results;
+    }
+
     public static async Task ExecuteUpdateAsync(string query)
     {
         if (Connection is null)
@@ -51,6 +82,29 @@ public static class DatabaseHelper
             await connection.OpenAsync();
             await using var command = connection.CreateCommand();
             command.CommandText = query;
+            await command.ExecuteNonQueryAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Database error: {ex.Message}");
+            throw;
+        }
+    }
+
+    public static async Task ExecuteUpdateAsync(string query, MySqlParameter[] parameters)
+    {
+        if (Connection is null)
+        {
+            SetDatabaseConnection();
+        }
+
+        try
+        {
+            await using var connection = new MySqlConnection(Connection.ConnectionString);
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText = query;
+            command.Parameters.AddRange(parameters);
             await command.ExecuteNonQueryAsync();
         }
         catch (Exception ex)
