@@ -57,11 +57,6 @@ def lambda_handler(event, context):
             cursor.execute(GET_SCHEDULE_SQL)
             row = cursor.fetchall()
 
-        if not row:
-            return response(
-                404, {"message": "No schedule found please set up some matches first."}
-            )
-
         return response(200, {"items": row})
 
     except Exception as e:
