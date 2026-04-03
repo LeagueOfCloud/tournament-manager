@@ -49,3 +49,33 @@ Follow these steps to add a new API route:
 1. Install the [MySQL Extension](https://marketplace.visualstudio.com/items?itemName=cweijan.vscode-mysql-client2) to your Visual Studio Code.
 2. Login to your Database.
 3. Afterwards, you can navigate to the `db_migration/` directory and run any migrations by clicking the file and pressing the `Run` button on top.
+
+## Secrets Manager
+The following secrets are required in a Secrets Manager for the app to function:
+- `host` -> Database Host
+- `port` -> Database Port
+- `user` -> Database User
+- `password` -> Database Password
+- `name` -> Database Name
+- `riot_api_key` -> The Riot API Key
+- `twitch_client_id` -> Twitch Client ID for Live Status
+
+## Secrets Manager (Web)
+The website will need the following .env file put into a secrets manager:
+```env
+DISCORD_CLIENT_SECRET=''
+DISCORD_CLIENT_ID=''
+
+DB_HOST=''
+DB_USER=''
+DB_PASSWORD=''
+DB_NAME=''
+
+NEXTAUTH_SECRET=''
+NEXTAUTH_URL=''
+
+NEXT_PUBLIC_API_URL=''
+NEXT_PUBLIC_CDN_URL=''
+NEXT_PUBLIC_IMAGE_VERSION='5'
+NEXT_PUBLIC_WSS_CONNECTION_URL=''
+```
